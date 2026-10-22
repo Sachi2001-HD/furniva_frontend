@@ -1,8 +1,21 @@
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..600;1,9..144,400..600&family=Manrope:wght@400;500;600&display=swap");
 @import "tailwindcss";
 
 @theme {
+  /* Fonts */
+  --font-display: "Fraunces", serif;
+  --font-sans: "Manrope", sans-serif;
+
+  /* Colours */
   --color-primary: #713e26;
   --color-accent: #d2ba9e;
   --color-secondary: #28150e;
   --color-background: #fbf3e9;
+  --color-highlight: #c77b3d;
+}
+
+@layer base {
+  body {
+    @apply bg-background font-sans text-secondary antialiased;
+  }
 }
