@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Eye, EyeOff, User, Mail, Lock, ShieldCheck } from "lucide-react";
 import signupImg from "../assets/images/signup_img.jpg";
+import { useAuth } from "../context/authContext";
+import "../app.css";
+
+const API_URL = import.meta.env.VITE_API_URL;
 
 const inputClass =
   "h-11 w-full rounded-2xl border border-accent/70 bg-background px-4 text-base outline-none transition placeholder:text-secondary/40 focus:border-primary focus:ring-4 focus:ring-primary/15 aria-[invalid=true]:border-[#9B2C1F]";
@@ -77,9 +82,18 @@ function PasswordInput({
   );
 }
 
-export default function SignUpPage({ onSubmit }) {
+export default function SignUpPage() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { login } = useAuth();
+
+  const redirectTo = location.state?.from || "/";
+
   const [ready, setReady] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [serverError, setServerError] = useState("");
+  const [agreed, setAgreed] = useState(false);
 
   const [values, setValues] = useState({
     firstName: "",
@@ -124,17 +138,49 @@ export default function SignUpPage({ onSubmit }) {
     errors.confirm = "Passwords do not match.";
   }
 
+  if (!agreed) {
+    errors.agree = "Please agree to the Terms and Privacy Policy to continue.";
+  }
+
   const showError = (key) =>
     (submitted || (key === "confirm" && values.confirm)) && errors[key];
 
   const strength = getStrength(values.password);
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
     setSubmitted(true);
+    setServerError("");
 
-    if (Object.keys(errors).length === 0) {
-      onSubmit?.(values);
+    if (Object.keys(errors).length > 0) return;
+
+    try {
+      setLoading(true);
+
+      const res = await fetch(`${API_URL}/users/signup`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          firstName: values.firstName.trim(),
+          lastName: values.lastName.trim(),
+          email: values.email.trim(),
+          password: values.password,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setServerError(data.message || "Signup failed. Please try again.");
+        return;
+      }
+
+      login(data.token, data.user);
+      navigate(redirectTo, { replace: true });
+    } catch {
+      setServerError("Cannot reach the server. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -148,8 +194,8 @@ export default function SignUpPage({ onSubmit }) {
       >
         <div className="grid items-stretch lg:grid-cols-2">
           {/* Form section */}
-          <section className="min-w-0 px-5 py-4 sm:px-10 sm:py-8 lg:px-10 xl:px-12">
-            <a href="/" className="inline-flex items-center gap-2.5">
+          <section className="min-w-0 px-3 py-4 sm:px-10 sm:py-8 lg:px-10 xl:px-12">
+            <Link to="/" className="inline-flex items-center gap-2.5">
               <span className="grid h-10 w-10 place-items-center rounded-full bg-primary font-display text-lg font-semibold text-background">
                 F
               </span>
@@ -157,14 +203,14 @@ export default function SignUpPage({ onSubmit }) {
               <span className="font-display text-[22px] font-semibold text-primary">
                 Furniva
               </span>
-            </a>
+            </Link>
 
             <h1 className="font-display text-center text-primary text-4xl leading-tight tracking-tight">
               Sign up
             </h1>
 
             <p className="mt-2 max-w-md text-sm leading-6 text-secondary/70">
-              Save favourites, track orders and get early access to new
+              Save favourites, track orders & get early access to new
               collections.
             </p>
 
@@ -287,46 +333,102 @@ export default function SignUpPage({ onSubmit }) {
                 />
               </Field>
 
+              <div>
+                <div className="flex items-start gap-3">
+                  <input
+                    id="agree"
+                    type="checkbox"
+                    checked={agreed}
+                    onChange={(event) => setAgreed(event.target.checked)}
+                    aria-invalid={!!showError("agree")}
+                    aria-describedby={
+                      showError("agree") ? "agree-error" : undefined
+                    }
+                    className="mt-0.5 h-5 w-5 shrink-0 cursor-pointer accent-primary"
+                  />
+
+                  <label
+                    htmlFor="agree"
+                    className="text-sm leading-5 text-secondary/70"
+                  >
+                    I agree to the{" "}
+                    <Link
+                      to="/terms"
+                      className="font-medium text-primary hover:underline"
+                    >
+                      Terms of Service
+                    </Link>{" "}
+                    and{" "}
+                    <Link
+                      to="/privacy"
+                      className="font-medium text-primary hover:underline"
+                    >
+                      Privacy Policy
+                    </Link>
+                    .
+                  </label>
+                </div>
+
+                {showError("agree") && (
+                  <p id="agree-error" className="mt-1.5 text-sm text-[#9B2C1F]">
+                    {errors.agree}
+                  </p>
+                )}
+              </div>
+
+              {serverError && (
+                <p
+                  role="alert"
+                  className="rounded-2xl bg-[#9B2C1F]/10 px-4 py-2.5 text-sm text-[#9B2C1F]"
+                >
+                  {serverError}
+                </p>
+              )}
+
               <button
                 type="submit"
-                className="mt-2 h-11 w-full rounded-full bg-primary text-base font-medium text-background shadow-[0_10px_24px_rgba(113,62,38,0.25)] transition hover:bg-secondary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary active:scale-[0.98]"
+                disabled={loading}
+                className="mt-2 h-11 w-full rounded-full bg-primary text-base font-medium text-background shadow-[0_10px_24px_rgba(113,62,38,0.25)] transition hover:bg-secondary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                Create account
+                {loading ? "Creating account..." : "Create account"}
               </button>
             </form>
 
             <p className="mt-3 text-center text-sm text-secondary/70">
               Already have an account?{" "}
-              <a
-                href="/login"
+              <Link
+                to="/login"
+                state={location.state}
                 className="font-medium text-primary hover:underline"
               >
                 Sign in
-              </a>
+              </Link>
             </p>
           </section>
 
           {/* Image section */}
-          <aside className="relative hidden min-h-600px overflow-hidden bg-[#E8D9C5] lg:block">
-            <img
-              src={signupImg}
-              alt="Warm, natural wood furniture in an elegant living room"
-              className={`absolute inset-0 h-full w-full object-cover transition-transform duration-1600ms ease-out motion-reduce:transition-none ${
-                ready ? "scale-100" : "scale-110"
-              }`}
-            />
+          <aside className="hidden p-2 lg:block">
+            <div className="relative h-full min-h-600px overflow-hidden rounded-3xl bg-[#E8D9C5]">
+              <img
+                src={signupImg}
+                alt="Warm, natural wood furniture in an elegant living room"
+                className={`absolute inset-0 h-full w-full object-cover transition-transform duration-1600ms ease-out motion-reduce:transition-none ${
+                  ready ? "scale-100" : "scale-110"
+                }`}
+              />
 
-            <div className="absolute inset-0 bg-[linear-gradient(to_top,rgba(40,21,14,0.88),rgba(40,21,14,0.15)_60%,transparent)]" />
+              <div className="absolute inset-0 bg-[linear-gradient(to_top,rgba(40,21,14,0.88),rgba(40,21,14,0.15)_60%,transparent)]" />
 
-            <div className="absolute inset-x-0 bottom-0 p-8 xl:p-10">
-              <p className="font-display text-3xl leading-tight text-background xl:text-4xl">
-                Timeless wood, crafted for the way you live.
-              </p>
+              <div className="absolute inset-x-0 bottom-0 p-8 xl:p-10">
+                <p className="font-display text-3xl leading-tight text-background xl:text-4xl">
+                  Timeless wood, crafted for the way you live.
+                </p>
 
-              <p className="mt-3 max-w-sm text-base leading-7 text-background/80">
-                Members get 10% off their first order and free design
-                consultations.
-              </p>
+                <p className="mt-3 max-w-sm text-base leading-7 text-background/80">
+                  Members get 10% off their first order & free design
+                  consultations.
+                </p>
+              </div>
             </div>
           </aside>
         </div>

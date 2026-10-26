@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Bell, Heart, ShoppingBag, Menu, X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const links = ["Home", "Products", "Consultation", "Custom Furniture", "About Us"];
 
@@ -11,6 +12,7 @@ const shadow = "shadow-[0_8px_30px_rgba(113,62,38,0.08)]";
 export default function Navbar({ cartCount = 0 }) {
   const [active, setActive] = useState("Home");
   const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
 
   return (
     <header className="relative mx-auto max-w-[1680px]">
@@ -43,7 +45,6 @@ export default function Navbar({ cartCount = 0 }) {
           ))}
         </nav>
 
-       
         <div className="flex items-center gap-1 justify-self-end">
           <button
             aria-label="Notifications"
@@ -69,11 +70,13 @@ export default function Navbar({ cartCount = 0 }) {
 
           <span className="mx-2 hidden h-6 w-px bg-accent sm:block" />
 
-          <button className="hidden h-9 items-center rounded-full bg-primary px-3.5 text-[14px] font-medium text-background transition hover:bg-primary/90 sm:inline-flex">
+          <button
+            onClick={() => navigate("/signup")}
+            className="hidden h-9 items-center rounded-full bg-primary px-3.5 text-[14px] font-medium text-background transition hover:bg-primary/90 sm:inline-flex"
+          >
             Sign up
           </button>
 
-          {/* Menu button (below xl) */}
           <button
             aria-label="Menu"
             aria-expanded={open}
@@ -113,7 +116,13 @@ export default function Navbar({ cartCount = 0 }) {
             <button className="flex items-center gap-3 rounded-2xl px-4 py-3 text-left text-[16px] text-secondary/80">
               <Heart size={20} /> Wishlist
             </button>
-            <button className="mt-1 rounded-2xl bg-primary px-4 py-3 text-[16px] font-medium text-background">
+            <button
+              className="mt-1 rounded-2xl bg-primary px-4 py-3 text-[16px] font-medium text-background"
+              onClick={() => {
+                setOpen(false);
+                navigate("/signup");
+              }}
+            >
               Sign up
             </button>
           </div>
