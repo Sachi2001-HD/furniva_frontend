@@ -19,7 +19,7 @@ import { useAuth } from "../context/authContext";
 
 const links = [
   { label: "Home", path: "/" },
-  { label: "Products", path: "/products" },
+  { label: "Shop", path: "/shop" },
   { label: "Consultation", path: "/consultation" },
   { label: "Custom Furniture", path: "/custom-furniture" },
   { label: "About Us", path: "/about" },
