@@ -186,9 +186,12 @@ export default function SignUpPage() {
 
   return (
     <main className="grid min-h-screen place-items-center bg-background bg-[repeating-linear-gradient(100deg,transparent_0_14px,rgba(113,62,38,0.045)_14px_15px)] px-4 py-6 sm:px-8">
-
       <div
-        className={`w-full max-w-6xl overflow-hidden rounded-4xl shadow-accent border border-accent/50 bg-[#FDF8F1] shadow-[0_30px_80px_rgba(113,62,38,0.20)] transition duration-700 ease-out motion-reduce:transition-none ${
+        style={{
+          borderRadius: "32px",
+          boxShadow: "0 30px 80px rgba(113, 62, 38, 0.28)",
+        }}
+        className={`w-full max-w-6xl overflow-hidden rounded-32px border border-accent/50 bg-[#FDF8F1] transition duration-700 ease-out motion-reduce:transition-none ${
           ready ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
         }`}
       >
@@ -407,28 +410,26 @@ export default function SignUpPage() {
           </section>
 
           {/* Image section */}
-          <aside className="hidden p-2 lg:block">
-            <div className="relative h-full min-h-600px overflow-hidden rounded-3xl bg-[#E8D9C5]">
-              <img
-                src={signupImg}
-                alt="Warm, natural wood furniture in an elegant living room"
-                className={`absolute inset-0 h-full w-full object-cover transition-transform duration-1600ms ease-out motion-reduce:transition-none ${
-                  ready ? "scale-100" : "scale-110"
-                }`}
-              />
+          <aside className="relative hidden min-h-600px overflow-hidden bg-[#E8D9C5] lg:block">
+            <img
+              src={signupImg}
+              alt="Warm, natural wood furniture in an elegant living room"
+              className={`absolute inset-0 h-full w-full object-cover transition-transform duration-1600ms ease-out motion-reduce:transition-none ${
+                ready ? "scale-100" : "scale-110"
+              }`}
+            />
 
-              <div className="absolute inset-0 bg-[linear-gradient(to_top,rgba(40,21,14,0.88),rgba(40,21,14,0.15)_60%,transparent)]" />
+            <div className="absolute inset-0 bg-[linear-gradient(to_top,rgba(40,21,14,0.88),rgba(40,21,14,0.15)_60%,transparent)]" />
 
-              <div className="absolute inset-x-0 bottom-0 p-8 xl:p-10">
-                <p className="font-display text-3xl leading-tight text-background xl:text-4xl">
-                  Timeless wood, crafted for the way you live.
-                </p>
+            <div className="absolute inset-x-0 bottom-0 p-8 xl:p-10">
+              <p className="font-display text-3xl leading-tight text-background xl:text-4xl">
+                Timeless wood, crafted for the way you live.
+              </p>
 
-                <p className="mt-3 max-w-sm text-base leading-7 text-background/80">
-                  Members get 10% off their first order & free design
-                  consultations.
-                </p>
-              </div>
+              <p className="mt-3 max-w-sm text-base leading-7 text-background/80">
+                Members get 10% off their first order & free design
+                consultations.
+              </p>
             </div>
           </aside>
         </div>

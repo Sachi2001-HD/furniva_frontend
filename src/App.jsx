@@ -3,6 +3,7 @@ import HomePage from "./pages/homePage";
 import SignUpPage from "./pages/signupPage";
 import ShopPage from "./pages/shopPage";
 import AboutPage from "./pages/aboutPage";
+import LoginPage from "./pages/loginPage";
 
 export default function App() {
   return (
@@ -11,6 +12,7 @@ export default function App() {
       <Route path="/signup" element={<SignUpPage />} />
       <Route path="/shop" element={<ShopPage />} />
       <Route path="/about" element={<AboutPage />} />
+      <Route path="/login" element={<LoginPage />} />
     </Routes>
   );
 }

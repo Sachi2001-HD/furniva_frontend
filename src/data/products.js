@@ -1,6 +1,9 @@
 import DiningTable from "../assets/images/Dining_Table.jpg";
 import LoungeChair from "../assets/images/Lounge_Chair.jpg";
 import Sideboard from "../assets/images/Sideboard.jpg";
+import LinenSofa from "../assets/images/linen_sofa.jpg";
+import CoffeeTable from "../assets/images/Coffee_Table.jpg";
+import Bookcase from "../assets/images/Bookcase.jpg";
 
 export const formatPrice = (n) => `Rs. ${n.toLocaleString("en-US")}`;
 
@@ -33,7 +36,7 @@ export const products = [
     reviewCount: 10,
     dimensions: { w: 180, d: 90, h: 75 },
     inStock: true,
-    badge: "Bestseller",
+    badge: "New",
     image: DiningTable,
     createdAt: "2026-05-02",
   },
@@ -49,7 +52,7 @@ export const products = [
     reviewCount: 12,
     dimensions: { w: 72, d: 78, h: 80 },
     inStock: true,
-    badge: "Bestseller",
+    badge: null,
     image: LoungeChair,
     createdAt: "2026-04-18",
   },
@@ -79,7 +82,7 @@ export const products = [
     dimensions: { w: 220, d: 95, h: 82 },
     inStock: true,
     badge: "New",
-    image: null,
+    image: LinenSofa,
     createdAt: "2026-10-12",
   },
   {
@@ -94,7 +97,7 @@ export const products = [
     dimensions: { w: 100, d: 60, h: 40 },
     inStock: true,
     badge: "New",
-    image: null,
+    image: CoffeeTable,
     createdAt: "2026-10-05",
   },
   {
@@ -108,7 +111,7 @@ export const products = [
     reviewCount: 6,
     dimensions: { w: 90, d: 35, h: 180 },
     inStock: false,
-    image: null,
+    image: Bookcase,
     createdAt: "2026-02-21",
   },
 ];

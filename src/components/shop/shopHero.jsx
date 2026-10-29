@@ -1,13 +1,12 @@
 import { useEffect, useState } from "react";
 import { ArrowLeft, ArrowRight, Pause, Play } from "lucide-react";
 import DiningTable from "../../assets/images/Dining_Table.jpg";
-import LoungeChair from "../../assets/images/Lounge_Chair.jpg";
-import Sideboard from "../../assets/images/Sideboard.jpg";
+import Banner1 from "../../assets/images/banner1.jpg";
+import Sideboard from "../../assets/images/banner2.jpg";
 
-// Swap these for wide room photos (about 2400 × 1000) for the best look
 const slides = [
   {
-    image: LoungeChair,
+    image: Banner1,
     heading: ["A little nature.", "A lot of home."],
     text: "Thoughtful wooden furniture for your everyday moments.",
   },
@@ -27,7 +26,7 @@ export default function ShopHero({ onExplore }) {
   const [index, setIndex] = useState(0);
   const [playing, setPlaying] = useState(true);
 
-  // Auto-advance; the timer restarts after every manual change
+  //Timer
   useEffect(() => {
     if (!playing) return;
 
