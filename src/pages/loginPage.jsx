@@ -1,6 +1,21 @@
-import { useEffect, useState } from "react";
-import { Eye, EyeOff, Mail, Lock, ArrowRight, ArrowLeft } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { GoogleOAuthProvider, useGoogleLogin } from "@react-oauth/google";
+import {
+  Eye,
+  EyeOff,
+  Mail,
+  Lock,
+  ArrowRight,
+  ArrowLeft,
+  Check,
+} from "lucide-react";
 import loginImg from "../assets/images/login.jpg";
+import { useAuth } from "../context/authContext";
+import "../app.css";
+
+const API_URL = import.meta.env.VITE_API_URL;
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
 const inputClass =
   "h-11 w-full rounded-2xl border border-accent/70 bg-background px-4 text-base outline-none transition placeholder:text-secondary/40 focus:border-primary focus:ring-4 focus:ring-primary/15 aria-[invalid=true]:border-[#9B2C1F]";
@@ -50,9 +65,44 @@ function GoogleIcon() {
   );
 }
 
-export default function LoginPage({ onSubmit, onGoogleClick, error }) {
+function GoogleButtonView({ onClick, disabled }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className="inline-flex h-11 w-full items-center justify-center gap-3 rounded-full border border-accent bg-white/70 text-base font-medium transition hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+    >
+      <GoogleIcon />
+      Continue with Google
+    </button>
+  );
+}
+
+function GoogleButton({ onCode, onFail, disabled }) {
+  const start = useGoogleLogin({
+    flow: "auth-code",
+    onSuccess: ({ code }) => onCode(code),
+    onError: () => onFail("Google sign-in failed. Please try again."),
+    onNonOAuthError: () => onFail(""), 
+  });
+
+  return <GoogleButtonView onClick={() => start()} disabled={disabled} />;
+}
+
+export default function LoginPage() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { login } = useAuth();
+
+  const redirectTo = location.state?.from || "/";
+  const redirectTimer = useRef(null);
+
   const [ready, setReady] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [serverError, setServerError] = useState("");
+  const [success, setSuccess] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
   const [values, setValues] = useState({
@@ -66,6 +116,8 @@ export default function LoginPage({ onSubmit, onGoogleClick, error }) {
 
     return () => cancelAnimationFrame(id);
   }, []);
+
+  useEffect(() => () => clearTimeout(redirectTimer.current), []);
 
   const set = (key) => (event) => {
     setValues((previous) => ({
@@ -89,28 +141,100 @@ export default function LoginPage({ onSubmit, onGoogleClick, error }) {
 
   const showError = (key) => submitted && errors[key];
 
+  const finishLogin = (data) => {
+    login(data.token, data.user);
+
+    const name = data.user?.firstName;
+    setSuccess(
+      name
+        ? `Login successful. Welcome back, ${name}!`
+        : "Login successful. Welcome back!"
+    );
+
+    redirectTimer.current = setTimeout(() => {
+      navigate(redirectTo, { replace: true });
+    }, 1200);
+  };
+
+  const authenticate = async (path, payload, failMessage) => {
+    setServerError("");
+    setLoading(true);
+
+    try {
+      const res = await fetch(`${API_URL}${path}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setServerError(data.message || failMessage);
+        setLoading(false);
+        return;
+      }
+
+      // Keep the buttons disabled until the redirect happens
+      finishLogin(data);
+    } catch {
+      setServerError("Cannot reach the server. Please try again.");
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = (event) => {
     event.preventDefault();
     setSubmitted(true);
 
-    if (Object.keys(errors).length === 0) {
-      onSubmit?.(values);
-    }
+    if (Object.keys(errors).length > 0) return;
+
+    authenticate(
+      "/users/login",
+      { email: values.email.trim(), password: values.password },
+      "Login failed. Please try again."
+    );
   };
+
+  const handleGoogleCode = (code) =>
+    authenticate("/users/google", { code }, "Google sign-in failed.");
+
+  const handleGoogleFail = (message) => {
+    if (message) setServerError(message);
+  };
+
+  const busy = loading || !!success;
 
   return (
     <main className="grid min-h-screen place-items-center bg-background bg-[repeating-linear-gradient(100deg,transparent_0_14px,rgba(113,62,38,0.045)_14px_15px)] px-4 py-6 sm:px-8">
+      {/* Success alert */}
+      {success && (
+        <div
+          role="status"
+          className="fixed left-1/2 top-6 z-50 flex w-[calc(100%-2rem)] max-w-md -translate-x-1/2 items-center gap-3 rounded-2xl bg-[#1F5C36] px-5 py-4 text-sm font-medium text-white shadow-[0_16px_40px_rgba(0,0,0,0.25)]"
+        >
+          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white/20">
+            <Check size={16} aria-hidden="true" />
+          </span>
+          {success}
+        </div>
+      )}
+
       <div
-        className={`w-full max-w-6xl overflow-hidden rounded-4xl shadow-accent border border-accent/50 bg-[#FDF8F1] shadow-[0_30px_80px_rgba(113,62,38,0.20)] transition duration-700 ease-out motion-reduce:transition-none ${
+        style={{
+          borderRadius: "32px",
+          boxShadow: "0 30px 80px rgba(113, 62, 38, 0.28)",
+        }}
+        className={`w-full max-w-6xl overflow-hidden rounded-32px border border-accent/50 bg-[#FDF8F1] transition duration-700 ease-out motion-reduce:transition-none ${
           ready ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
         }`}
       >
         <div className="grid items-stretch lg:grid-cols-2">
           {/* Form section */}
           <section className="flex min-w-0 flex-col px-5 py-6 sm:px-10 sm:py-8 xl:px-12">
-            {/* Top row: logo and back to shop */}
+            
             <div className="flex items-center justify-between gap-3">
-              <a href="/" className="inline-flex items-center gap-2.5">
+              <Link to="/" className="inline-flex items-center gap-2.5">
                 <span className="grid h-10 w-10 place-items-center rounded-full bg-primary font-display text-lg font-semibold text-background">
                   F
                 </span>
@@ -118,10 +242,10 @@ export default function LoginPage({ onSubmit, onGoogleClick, error }) {
                 <span className="font-display text-[22px] font-semibold text-primary">
                   Furniva
                 </span>
-              </a>
+              </Link>
 
-              <a
-                href="/shop"
+              <Link
+                to="/shop"
                 className="group inline-flex items-center gap-2 text-sm font-medium text-primary transition hover:text-secondary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
               >
                 <ArrowLeft
@@ -130,7 +254,7 @@ export default function LoginPage({ onSubmit, onGoogleClick, error }) {
                   className="transition motion-safe:group-hover:-translate-x-1"
                 />
                 Back to shop
-              </a>
+              </Link>
             </div>
 
             <h1 className="mt-4 text-center font-display text-4xl leading-tight tracking-tight text-primary">
@@ -142,15 +266,6 @@ export default function LoginPage({ onSubmit, onGoogleClick, error }) {
             </p>
 
             <form onSubmit={handleSubmit} noValidate className="mt-6 space-y-4">
-              {error && (
-                <p
-                  role="alert"
-                  className="rounded-2xl border border-[#9B2C1F]/30 bg-[#9B2C1F]/5 px-4 py-3 text-sm text-[#9B2C1F]"
-                >
-                  {error}
-                </p>
-              )}
-
               <Field
                 id="email"
                 label="Email"
@@ -165,7 +280,9 @@ export default function LoginPage({ onSubmit, onGoogleClick, error }) {
                   placeholder="you@example.com"
                   autoComplete="email"
                   aria-invalid={!!showError("email")}
-                  aria-describedby={showError("email") ? "email-error" : undefined}
+                  aria-describedby={
+                    showError("email") ? "email-error" : undefined
+                  }
                   className={inputClass}
                 />
               </Field>
@@ -214,19 +331,29 @@ export default function LoginPage({ onSubmit, onGoogleClick, error }) {
                   Remember me
                 </label>
 
-                <a
-                  href="/forgot-password"
+                <Link
+                  to="/forgot-password"
                   className="font-medium text-primary hover:underline"
                 >
                   Forgot password?
-                </a>
+                </Link>
               </div>
+
+              {serverError && (
+                <p
+                  role="alert"
+                  className="rounded-2xl bg-[#9B2C1F]/10 px-4 py-2.5 text-sm text-[#9B2C1F]"
+                >
+                  {serverError}
+                </p>
+              )}
 
               <button
                 type="submit"
-                className="group inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-primary text-base font-medium text-background shadow-[0_10px_24px_rgba(113,62,38,0.25)] transition hover:bg-secondary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary active:scale-[0.98]"
+                disabled={busy}
+                className="group inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-primary text-base font-medium text-background shadow-[0_10px_24px_rgba(113,62,38,0.25)] transition hover:bg-secondary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                Sign in
+                {success ? "Redirecting..." : loading ? "Signing in..." : "Sign in"}
                 <ArrowRight
                   size={18}
                   aria-hidden="true"
@@ -243,23 +370,34 @@ export default function LoginPage({ onSubmit, onGoogleClick, error }) {
             </div>
 
             {/* Google */}
-            <button
-              type="button"
-              onClick={onGoogleClick}
-              className="inline-flex h-11 w-full items-center justify-center gap-3 rounded-full border border-accent bg-white/70 text-base font-medium transition hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary active:scale-[0.98]"
-            >
-              <GoogleIcon />
-              Continue with Google
-            </button>
+            {GOOGLE_CLIENT_ID ? (
+              <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+                <GoogleButton
+                  onCode={handleGoogleCode}
+                  onFail={handleGoogleFail}
+                  disabled={busy}
+                />
+              </GoogleOAuthProvider>
+            ) : (
+              <GoogleButtonView
+                disabled={busy}
+                onClick={() =>
+                  setServerError(
+                    "Google sign-in isn't set up yet. Add VITE_GOOGLE_CLIENT_ID to your .env file."
+                  )
+                }
+              />
+            )}
 
             <p className="mt-5 text-center text-sm text-secondary/70">
               Don’t have an account?{" "}
-              <a
-                href="/signup"
+              <Link
+                to="/signup"
+                state={location.state}
                 className="font-medium text-primary hover:underline"
               >
                 Create account
-              </a>
+              </Link>
             </p>
 
             <p className="mt-6 text-center text-xs text-secondary/50 lg:mt-auto lg:pt-6">
