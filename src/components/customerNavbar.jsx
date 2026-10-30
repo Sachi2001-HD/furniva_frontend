@@ -13,6 +13,7 @@ import {
   CalendarCheck,
   Palette,
   ChevronDown,
+  LayoutDashboard,
 } from "lucide-react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/authContext";
@@ -55,6 +56,12 @@ export default function CustomerNavbar({ cartCount = 0 }) {
   const { user, logout } = useAuth();
 
   const initial = user?.firstName?.charAt(0).toUpperCase() || "U";
+
+  const isAdmin = user?.role === "admin";
+
+  const menuLinks = isAdmin
+    ? [{ label: "Admin Dashboard", path: "/admin", icon: LayoutDashboard }]
+    : accountLinks;
 
   const isActive = (path) =>
     path === "/"
@@ -119,7 +126,7 @@ export default function CustomerNavbar({ cartCount = 0 }) {
         <div className="flex items-center gap-1 justify-self-end">
           <button
             aria-label="Search products"
-            onClick={() => go("/products")}
+            onClick={() => go("/shop")}
             className={`${iconBtn} hidden sm:grid`}
           >
             <Search size={21} />
@@ -207,7 +214,7 @@ export default function CustomerNavbar({ cartCount = 0 }) {
           </div>
 
           <div className="mt-2 flex flex-col gap-1">
-            {accountLinks.map(({ label, path, icon: Icon }) => (
+            {menuLinks.map(({ label, path, icon: Icon }) => (
               <button
                 key={label}
                 onClick={() => go(path)}
@@ -251,7 +258,7 @@ export default function CustomerNavbar({ cartCount = 0 }) {
 
           <div className="mt-1 flex flex-col gap-1 border-t border-accent/40 pt-2 sm:hidden">
             <button
-              onClick={() => go("/products")}
+              onClick={() => go("/shop")}
               className="flex items-center gap-3 rounded-2xl px-4 py-3 text-left text-[16px] text-secondary/80"
             >
               <Search size={20} />
@@ -287,7 +294,7 @@ export default function CustomerNavbar({ cartCount = 0 }) {
                 My Account
               </p>
 
-              {accountLinks.map(({ label, path, icon: Icon }) => (
+              {menuLinks.map(({ label, path, icon: Icon }) => (
                 <button
                   key={label}
                   onClick={() => go(path)}
