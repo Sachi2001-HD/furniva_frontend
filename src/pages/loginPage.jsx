@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import loginImg from "../assets/images/login.jpg";
 import { useAuth } from "../context/authContext";
+import { getPostLoginPath } from "../utils/roles";
 import "../app.css";
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -95,7 +96,6 @@ export default function LoginPage() {
   const location = useLocation();
   const { login } = useAuth();
 
-  const redirectTo = location.state?.from || "/";
   const redirectTimer = useRef(null);
 
   const [ready, setReady] = useState(false);
@@ -151,8 +151,10 @@ export default function LoginPage() {
         : "Login successful. Welcome back!"
     );
 
+    const target = getPostLoginPath(data.user, location.state?.from);
+
     redirectTimer.current = setTimeout(() => {
-      navigate(redirectTo, { replace: true });
+      navigate(target, { replace: true });
     }, 1200);
   };
 
@@ -175,7 +177,6 @@ export default function LoginPage() {
         return;
       }
 
-      // Keep the buttons disabled until the redirect happens
       finishLogin(data);
     } catch {
       setServerError("Cannot reach the server. Please try again.");
@@ -207,7 +208,7 @@ export default function LoginPage() {
 
   return (
     <main className="grid min-h-screen place-items-center bg-background bg-[repeating-linear-gradient(100deg,transparent_0_14px,rgba(113,62,38,0.045)_14px_15px)] px-4 py-6 sm:px-8">
-      {/* Success alert */}
+    
       {success && (
         <div
           role="status"
