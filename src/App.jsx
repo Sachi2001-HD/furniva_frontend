@@ -6,6 +6,8 @@ import LoginPage from "./pages/loginPage";
 import SignUpPage from "./pages/signUpPage";
 import AdminDashboardPage from "./pages/adminDashboardPage";
 import AdminSalesPage from "./pages/adminSalesPage";
+import ShopPage from "./pages/shopPage";
+import ConsultationPage from "./pages/consultationPage";
 
 export default function App() {
   return (
@@ -15,6 +17,8 @@ export default function App() {
       <Route path="/about" element={<AboutPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignUpPage />} />
+      <Route path="/shop" element={<ShopPage />} />
+      <Route path="/consultation" element={<ConsultationPage />} />
 
       {/* Logged-in users */}
       <Route element={<ProtectedRoute />}>
