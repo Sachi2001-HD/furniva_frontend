@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import {
   Bell,
   Heart,
@@ -47,6 +48,31 @@ const iconBtn =
 
 const shadow = "shadow-[0_8px_30px_rgba(113,62,38,0.08)]";
 
+function ProfileAvatar({ src, initial, size = "h-7 w-7" }) {
+  const [imageError, setImageError] = useState(false);
+
+  useEffect(() => {
+    setImageError(false);
+  }, [src]);
+
+  return (
+    <span
+      className={`${size} grid shrink-0 place-items-center overflow-hidden rounded-full bg-background font-semibold text-primary`}
+    >
+      {src && !imageError ? (
+        <img
+          src={src}
+          alt="Profile"
+          className="h-full w-full object-cover"
+          onError={() => setImageError(true)}
+        />
+      ) : (
+        initial
+      )}
+    </span>
+  );
+}
+
 export default function CustomerNavbar({ cartCount = 0 }) {
   const [open, setOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
@@ -56,6 +82,13 @@ export default function CustomerNavbar({ cartCount = 0 }) {
   const { user, logout } = useAuth();
 
   const initial = user?.firstName?.charAt(0).toUpperCase() || "U";
+
+  const profilePicture =
+    user?.image ||
+    user?.profilePicture ||
+    user?.picture ||
+    user?.photoURL ||
+    null;
 
   const isAdmin = user?.role === "admin";
 
@@ -84,7 +117,7 @@ export default function CustomerNavbar({ cartCount = 0 }) {
   return (
     <header className="relative mx-auto max-w-[1680px]">
       <div
-        className={`flex h-20 items-center justify-between gap-3 rounded-4xl border border-accent/40 bg-background/90 py-2.5 pl-3 pr-3 backdrop-blur xl:grid xl:grid-cols-[1fr_auto_1fr] xl:gap-4 ${shadow}`}
+        className={`flex h-20 -translate-x-1 items-center justify-between gap-3 rounded-4xl border border-accent/40 bg-background/90 py-2.5 pl-3 pr-3 backdrop-blur xl:grid xl:grid-cols-[1fr_auto_1fr] xl:gap-4 ${shadow}`}
       >
         {/* Logo */}
         <Link
@@ -168,12 +201,15 @@ export default function CustomerNavbar({ cartCount = 0 }) {
             aria-label="My Account"
             aria-expanded={accountOpen}
             onClick={() => setAccountOpen((previous) => !previous)}
-            className="hidden h-9 items-center gap-2 rounded-full bg-accent/50 px-2 text-[14px] font-medium text-primary transition hover:bg-accent/70 sm:flex"
+            className="hidden h-10 items-center gap-2 whitespace-nowrap rounded-full bg-accent/50 px-2 text-[14px] font-medium text-primary transition hover:bg-accent/70 sm:flex"
           >
-            <span className="grid h-7 w-7 place-items-center rounded-full bg-background font-semibold">
-              {initial}
-            </span>
+            <ProfileAvatar
+              src={profilePicture}
+              initial={initial}
+            />
+
             <span className="hidden lg:inline">My Account</span>
+
             <ChevronDown
               size={15}
               className={`hidden transition-transform lg:block ${
@@ -202,15 +238,24 @@ export default function CustomerNavbar({ cartCount = 0 }) {
         <div
           className={`absolute right-0 top-full z-30 mt-2 hidden w-64 rounded-3xl border border-accent/40 bg-background p-3 sm:block ${shadow}`}
         >
-          <div className="border-b border-accent/40 px-3 pb-3 pt-1">
-            <p className="font-medium text-primary">
-              {user?.firstName || "My Account"}
-            </p>
-            {user?.email && (
-              <p className="mt-1 break-all text-sm text-secondary/70">
-                {user.email}
+          <div className="flex items-center gap-3 border-b border-accent/40 px-3 pb-3 pt-1">
+            <ProfileAvatar
+              src={profilePicture}
+              initial={initial}
+              size="h-10 w-10"
+            />
+
+            <div className="min-w-0">
+              <p className="truncate font-medium text-primary">
+                {user?.firstName || "My Account"} {user?.lastName || ""}
               </p>
-            )}
+
+              {user?.email && (
+                <p className="mt-1 break-all text-sm text-secondary/70">
+                  {user.email}
+                </p>
+              )}
+            </div>
           </div>
 
           <div className="mt-2 flex flex-col gap-1">
@@ -290,9 +335,23 @@ export default function CustomerNavbar({ cartCount = 0 }) {
             </button>
 
             <div className="mt-1 border-t border-accent/40 pt-2">
-              <p className="px-4 py-2 text-sm font-semibold text-primary">
-                My Account
-              </p>
+              <div className="mb-2 flex items-center gap-3 px-4 py-2">
+                <ProfileAvatar
+                  src={profilePicture}
+                  initial={initial}
+                  size="h-10 w-10"
+                />
+
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold text-primary">
+                    {user?.firstName || "My Account"} {user?.lastName || ""}
+                  </p>
+
+                  <p className="truncate text-xs text-secondary/70">
+                    {user?.email}
+                  </p>
+                </div>
+              </div>
 
               {menuLinks.map(({ label, path, icon: Icon }) => (
                 <button

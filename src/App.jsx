@@ -8,6 +8,8 @@ import AdminDashboardPage from "./pages/adminDashboardPage";
 import AdminSalesPage from "./pages/adminSalesPage";
 import ShopPage from "./pages/shopPage";
 import ConsultationPage from "./pages/consultationPage";
+import AdminProductsPage from "./pages/adminProductsPage";
+import ProductDetailsPage from "./pages/productDetailsPage";
 
 export default function App() {
   return (
@@ -19,6 +21,7 @@ export default function App() {
       <Route path="/signup" element={<SignUpPage />} />
       <Route path="/shop" element={<ShopPage />} />
       <Route path="/consultation" element={<ConsultationPage />} />
+      <Route path="/product/:id" element={<ProductDetailsPage />} />
 
       {/* Logged-in users */}
       <Route element={<ProtectedRoute />}>
@@ -28,6 +31,7 @@ export default function App() {
       <Route element={<AdminRoute />}>
         <Route path="/admin" element={<AdminDashboardPage />} />
         <Route path="/admin/sales" element={<AdminSalesPage />} />
+        <Route path="/admin/products/*" element={<AdminProductsPage />} />
       </Route>
     </Routes>
   );
