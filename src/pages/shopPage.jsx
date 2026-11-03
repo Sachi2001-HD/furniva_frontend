@@ -13,6 +13,7 @@ import {
   Utensils,
   Archive,
 } from "lucide-react";
+
 import AnnouncementBar from "../components/announcementBar";
 import Navbar from "../components/navbar";
 import Footer from "../components/footer";
@@ -20,25 +21,25 @@ import ProductCard from "../components/productCard";
 import ShopHero from "../components/shop/shopHero";
 import FilterPanel from "../components/shop/filterPanel";
 import CompareTray from "../components/shop/compareTray";
+
 import { useAuth } from "../context/authContext";
-import { products, categories, MAX_PRICE, formatPrice } from "../data/products";
+import { apiRequest } from "../utils/api";
+
+const MAX_PRICE = 10000000;
+
+const formatPrice = (n) =>
+  `Rs. ${Number(n || 0).toLocaleString("en-US")}`;
 
 const categoryIcons = {
+  sofa: Sofa,
   sofas: Sofa,
+  chair: Armchair,
   chairs: Armchair,
+  table: Coffee,
   tables: Coffee,
   dining: Utensils,
   storage: Archive,
 };
-
-const tabs = [
-  { id: "all", label: "All furniture", icon: LayoutGrid, count: products.length },
-  ...categories.map((c) => ({
-    ...c,
-    icon: categoryIcons[c.id],
-    count: products.filter((p) => p.category === c.id).length,
-  })),
-];
 
 const sortOptions = [
   ["featured", "Featured"],
@@ -56,16 +57,77 @@ const defaultFilters = {
   saved: false,
 };
 
+const normalizeProduct = (product) => {
+  const categoryId =
+    typeof product.category === "object"
+      ? product.category?._id
+      : product.category;
+
+  const categoryName =
+    typeof product.category === "object"
+      ? product.category?.name || ""
+      : "";
+
+  const dimensions = product.dimensions || {};
+
+  const width = Number(
+    dimensions.w ??
+    dimensions.width ??
+    0
+  );
+
+  return {
+    ...product,
+
+    // MongoDB ID
+    id: product._id || product.id,
+
+    // Category
+    category: categoryId || "",
+    categoryId,
+    categoryName,
+
+    // Stock
+    inStock: Number(product.stock || 0) > 0,
+
+    // Dimensions
+    dimensions: {
+      ...dimensions,
+      w: width,
+    },
+
+    // Product display defaults
+    images: product.images || [],
+    rating: Number(product.rating || 0),
+    reviewCount: Number(product.reviewCount || 0),
+    price: Number(product.price || 0),
+    offerPrice:
+      product.offerPrice != null
+        ? Number(product.offerPrice)
+        : null,
+    material: product.material || "",
+    description: product.description || "",
+  };
+};
+
 export default function ShopPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { isLoggedIn } = useAuth();
 
+  // Main states
   const [category, setCategory] = useState("all");
   const [filters, setFilters] = useState(defaultFilters);
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState("featured");
   const [view, setView] = useState("grid");
+
+  // Product states
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  // Interaction states
   const [saved, setSaved] = useState(() => new Set());
   const [compare, setCompare] = useState([]);
   const [cartCount, setCartCount] = useState(0);
@@ -75,7 +137,95 @@ export default function ShopPage() {
   const searchRef = useRef(null);
   const toastTimer = useRef(null);
 
-  const update = (patch) => setFilters((prev) => ({ ...prev, ...patch }));
+//Fetch products from the backend
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        setError("");
+
+        const response = await apiRequest("/products");
+
+        const productList = Array.isArray(response)
+          ? response
+          : response?.products || response?.data?.products || [];
+
+        const normalizedProducts = productList.map(normalizeProduct);
+
+        if (isMounted) {
+          setProducts(normalizedProducts);
+        }
+      } catch (err) {
+        console.error("Error fetching products:", err);
+
+        if (isMounted) {
+          setError(
+            err.message || "Unable to load products. Please try again."
+          );
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchProducts();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  //Category tabs
+  const tabs = useMemo(() => {
+    const categoryMap = new Map();
+
+    products.forEach((product) => {
+      if (!product.category || !product.categoryName) return;
+
+      if (!categoryMap.has(product.category)) {
+        categoryMap.set(product.category, {
+          id: product.category,
+          label: product.categoryName,
+        });
+      }
+    });
+
+    const dynamicCategories = Array.from(categoryMap.values()).map(
+      (item) => {
+        const iconKey = item.label.toLowerCase().trim();
+
+        return {
+          ...item,
+          icon: categoryIcons[iconKey] || Archive,
+          count: products.filter(
+            (product) => product.category === item.id
+          ).length,
+        };
+      }
+    );
+
+    return [
+      {
+        id: "all",
+        label: "All furniture",
+        icon: LayoutGrid,
+        count: products.length,
+      },
+      ...dynamicCategories,
+    ];
+  }, [products]);
+
+  //Common Functions
+  const update = (patch) => {
+    setFilters((prev) => ({
+      ...prev,
+      ...patch,
+    }));
+  };
 
   const resetAll = () => {
     setFilters(defaultFilters);
@@ -86,122 +236,226 @@ export default function ShopPage() {
   const scrollToCollection = () =>
     document
       .getElementById("collection")
-      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+      ?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
 
   const showToast = (message) => {
     setToast(message);
+
     clearTimeout(toastTimer.current);
-    toastTimer.current = setTimeout(() => setToast(""), 2200);
+
+    toastTimer.current = setTimeout(() => {
+      setToast("");
+    }, 2200);
   };
 
-  // Guests are sent to sign up, then returned to this page
+  // Guests are sent to sign up
   const requireAuth = (action) => {
     if (!isLoggedIn) {
-      navigate("/signup", { state: { from: location.pathname } });
+      navigate("/signup", {
+        state: { from: location.pathname },
+      });
       return;
     }
+
     action();
   };
 
-  const toggleSave = (p) =>
-    requireAuth(() =>
+  //Wishlist
+  const toggleSave = (product) => {
+    requireAuth(() => {
       setSaved((prev) => {
         const next = new Set(prev);
-        next.has(p.id) ? next.delete(p.id) : next.add(p.id);
+
+        next.has(product.id)
+          ? next.delete(product.id)
+          : next.add(product.id);
+
         return next;
-      })
+      });
+    });
+  };
+
+  //Cart
+  const addToCart = (product) => {
+    requireAuth(() => {
+      setCartCount((count) => count + 1);
+
+      showToast(`${product.name} added to your cart`);
+    });
+  };
+
+  //Product Comparison
+  const toggleCompare = (product) => {
+    const exists = compare.some(
+      (item) => item.id === product.id
     );
 
-  const addToCart = (p) =>
-    requireAuth(() => {
-      setCartCount((c) => c + 1);
-      showToast(`${p.name} added to your cart`);
-    });
-
-  const toggleCompare = (p) => {
-    const exists = compare.some((x) => x.id === p.id);
     if (!exists && compare.length >= 3) {
       showToast("You can compare up to 3 pieces");
       return;
     }
-    setCompare(exists ? compare.filter((x) => x.id !== p.id) : [...compare, p]);
+
+    setCompare(
+      exists
+        ? compare.filter((item) => item.id !== product.id)
+        : [...compare, product]
+    );
   };
 
-  // Press "/" to focus search
   useEffect(() => {
     const onKey = (e) => {
       const tag = document.activeElement?.tagName;
-      if (e.key === "/" && !["INPUT", "TEXTAREA", "SELECT"].includes(tag)) {
+
+      if (
+        e.key === "/" &&
+        !["INPUT", "TEXTAREA", "SELECT"].includes(tag)
+      ) {
         e.preventDefault();
         searchRef.current?.focus();
       }
     };
+
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+
+    return () => {
+      window.removeEventListener("keydown", onKey);
+    };
   }, []);
 
+  //Search, filter and sort products
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
 
-    const list = products.filter(
-      (p) =>
-        (category === "all" || p.category === category) &&
-        (filters.materials.length === 0 || filters.materials.includes(p.material)) &&
-        (p.offerPrice ?? p.price) <= filters.maxPrice &&
-        (!filters.inStock || p.inStock) &&
-        (!filters.saved || saved.has(p.id)) &&
-        (!filters.maxWidth || p.dimensions.w <= Number(filters.maxWidth)) &&
-        (!q ||
-          `${p.name} ${p.description} ${p.material} ${p.category}`
-            .toLowerCase()
-            .includes(q))
-    );
+    const list = products.filter((product) => {
+      const price = product.offerPrice ?? product.price;
 
-    const priceOf = (p) => p.offerPrice ?? p.price;
+      const matchesCategory =
+        category === "all" || product.category === category;
+
+      const matchesMaterial =
+        filters.materials.length === 0 ||
+        filters.materials.includes(product.material);
+
+      const matchesPrice =
+        price <= filters.maxPrice;
+
+      const matchesStock =
+        !filters.inStock || product.inStock;
+
+      const matchesSaved =
+        !filters.saved || saved.has(product.id);
+
+      const matchesWidth =
+        !filters.maxWidth ||
+        (
+          product.dimensions.w > 0 &&
+          product.dimensions.w <= Number(filters.maxWidth)
+        );
+
+      const searchableText = [
+        product.name,
+        product.description,
+        product.material,
+        product.categoryName,
+      ]
+        .join(" ")
+        .toLowerCase();
+
+      const matchesSearch =
+        !q || searchableText.includes(q);
+
+      return (
+        matchesCategory &&
+        matchesMaterial &&
+        matchesPrice &&
+        matchesStock &&
+        matchesSaved &&
+        matchesWidth &&
+        matchesSearch
+      );
+    });
+
+    const priceOf = (product) =>
+      product.offerPrice ?? product.price;
+
     const sorters = {
-      "price-asc": (a, b) => priceOf(a) - priceOf(b),
-      "price-desc": (a, b) => priceOf(b) - priceOf(a),
-      rating: (a, b) => b.rating - a.rating,
-      newest: (a, b) => b.createdAt.localeCompare(a.createdAt),
+      "price-asc": (a, b) =>
+        priceOf(a) - priceOf(b),
+
+      "price-desc": (a, b) =>
+        priceOf(b) - priceOf(a),
+
+      rating: (a, b) =>
+        b.rating - a.rating,
+
+      newest: (a, b) =>
+        new Date(b.createdAt || 0) -
+        new Date(a.createdAt || 0),
+
+      featured: (a, b) =>
+        Number(Boolean(b.isFeatured)) -
+        Number(Boolean(a.isFeatured)),
     };
 
-    return sorters[sort] ? [...list].sort(sorters[sort]) : list;
-  }, [category, filters, query, sort, saved]);
+    return sorters[sort]
+      ? [...list].sort(sorters[sort])
+      : list;
+  }, [products, category, filters, query, sort, saved]);
 
+  //Active filter chips
   const chips = [
-    ...filters.materials.map((m) => ({
-      key: m,
-      label: m,
-      clear: () => update({ materials: filters.materials.filter((x) => x !== m) }),
+    ...filters.materials.map((material) => ({
+      key: material,
+      label: material,
+      clear: () =>
+        update({
+          materials: filters.materials.filter(
+            (item) => item !== material
+          ),
+        }),
     })),
+
     filters.maxPrice < MAX_PRICE && {
       key: "price",
       label: `Under ${formatPrice(filters.maxPrice)}`,
       clear: () => update({ maxPrice: MAX_PRICE }),
     },
+
     filters.maxWidth && {
       key: "width",
       label: `Fits ${filters.maxWidth} cm`,
       clear: () => update({ maxWidth: "" }),
     },
+
     filters.inStock && {
       key: "stock",
       label: "In stock",
       clear: () => update({ inStock: false }),
     },
+
     filters.saved && {
       key: "saved",
       label: "Saved",
       clear: () => update({ saved: false }),
     },
-    query && { key: "query", label: `"${query}"`, clear: () => setQuery("") },
+
+    query && {
+      key: "query",
+      label: `"${query}"`,
+      clear: () => setQuery(""),
+    },
   ].filter(Boolean);
 
   return (
     <main className="min-h-screen bg-background bg-[repeating-linear-gradient(100deg,transparent_0_14px,rgba(113,62,38,0.045)_14px_15px)]">
+
       {/* Announcement bar + navbar stay fixed together */}
       <div className="pointer-events-none sticky top-0 z-50">
         <AnnouncementBar />
+
         <div className="px-4 pt-4 sm:px-8 sm:pt-6">
           <div className="pointer-events-auto">
             <Navbar cartCount={cartCount} />
@@ -210,15 +464,18 @@ export default function ShopPage() {
       </div>
 
       <div className="mx-auto max-w-[1680px] px-4 pb-28 pt-6 sm:px-8">
+
         {/* Hero carousel */}
         <ShopHero onExplore={scrollToCollection} />
 
         {/* Heading + search */}
         <div className="mt-12 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary/70">
               Find your everyday favourite
             </p>
+
             <h1 className="mt-2 font-display text-4xl leading-tight tracking-tight text-secondary sm:text-5xl">
               Made for your home.
             </h1>
@@ -229,6 +486,7 @@ export default function ShopPage() {
               size={20}
               className="absolute left-5 top-1/2 -translate-y-1/2 text-secondary/50"
             />
+
             <input
               ref={searchRef}
               value={query}
@@ -237,6 +495,7 @@ export default function ShopPage() {
               aria-label="Search furniture"
               className="h-14 w-full rounded-full border border-accent/70 bg-background pl-14 pr-16 text-base outline-none transition placeholder:text-secondary/40 focus:border-primary focus:ring-4 focus:ring-primary/15"
             />
+
             {query ? (
               <button
                 type="button"
@@ -257,6 +516,7 @@ export default function ShopPage() {
         {/* Sticky toolbar */}
         <div className="sticky top-152px z-30 -mx-4 mt-8 px-4 sm:-mx-8 sm:px-8">
           <div className="flex flex-wrap items-center gap-3 rounded-4xl border border-accent/40 bg-background/90 p-2.5 shadow-[0_8px_30px_rgba(113,62,38,0.08)] backdrop-blur">
+
             <div
               role="tablist"
               aria-label="Categories"
@@ -264,6 +524,7 @@ export default function ShopPage() {
             >
               {tabs.map(({ id, label, icon: Icon, count }) => {
                 const active = category === id;
+
                 return (
                   <button
                     key={id}
@@ -278,10 +539,14 @@ export default function ShopPage() {
                     }`}
                   >
                     <Icon size={18} />
+
                     {label}
+
                     <span
                       className={`text-sm ${
-                        active ? "text-background/70" : "text-secondary/45"
+                        active
+                          ? "text-background/70"
+                          : "text-secondary/45"
                       }`}
                     >
                       {count}
@@ -292,6 +557,7 @@ export default function ShopPage() {
             </div>
 
             <div className="flex items-center gap-2">
+
               <button
                 type="button"
                 onClick={() => setDrawer(true)}
@@ -299,6 +565,7 @@ export default function ShopPage() {
               >
                 <SlidersHorizontal size={18} />
                 Filters
+
                 {chips.length > 0 && (
                   <span className="grid h-5 min-w-5 place-items-center rounded-full bg-highlight px-1 text-xs text-background">
                     {chips.length}
@@ -319,6 +586,7 @@ export default function ShopPage() {
                     </option>
                   ))}
                 </select>
+
                 <ChevronDown
                   size={16}
                   className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-secondary/60"
@@ -346,6 +614,7 @@ export default function ShopPage() {
                   </button>
                 ))}
               </div>
+
             </div>
           </div>
         </div>
@@ -355,17 +624,26 @@ export default function ShopPage() {
           id="collection"
           className="mt-8 grid scroll-mt-240px gap-10 lg:grid-cols-[280px_1fr] xl:grid-cols-[300px_1fr]"
         >
-          {/* Filters stay fixed on the left (on tall screens), with no inner scroll */}
+
+          {/* Filters */}
           <aside className="hidden lg:block">
-            <div className="[@media(min-height:900px)]:sticky @media(min-height:900px)]:top-[232px">
-              <FilterPanel filters={filters} onChange={update} onReset={resetAll} />
+            <div className="[@media(min-height:900px)]:sticky @media(min-height:900px)]:top-[232px]">
+              <FilterPanel
+                filters={filters}
+                onChange={update}
+                onReset={resetAll}
+              />
             </div>
           </aside>
 
+          {/* Products */}
           <section>
+
             <div className="mb-6 flex flex-wrap items-center gap-2">
               <p className="mr-2 text-[15px] text-secondary/70">
-                <span className="font-semibold text-secondary">{filtered.length}</span>{" "}
+                <span className="font-semibold text-secondary">
+                  {loading ? "..." : filtered.length}
+                </span>{" "}
                 {filtered.length === 1 ? "piece" : "pieces"} in the collection
               </p>
 
@@ -382,17 +660,51 @@ export default function ShopPage() {
               ))}
             </div>
 
-            {filtered.length === 0 ? (
+            {/* Loading state */}
+            {loading ? (
               <div className="grid place-items-center rounded-4xl border border-dashed border-accent/70 px-6 py-20 text-center">
+                <p className="text-secondary/65">
+                  Loading furniture...
+                </p>
+              </div>
+
+            ) : error ? (
+              /* Error state */
+              <div className="grid place-items-center rounded-4xl border border-dashed border-accent/70 px-6 py-20 text-center">
+                <h3 className="font-display text-2xl text-primary">
+                  Unable to load products
+                </h3>
+
+                <p className="mt-2 max-w-sm text-sm leading-6 text-secondary/65">
+                  {error}
+                </p>
+
+                <button
+                  type="button"
+                  onClick={() => window.location.reload()}
+                  className="mt-6 h-11 rounded-full bg-primary px-6 text-sm font-medium text-background hover:bg-secondary"
+                >
+                  Try again
+                </button>
+              </div>
+
+            ) : filtered.length === 0 ? (
+              /* No products state */
+              <div className="grid place-items-center rounded-4xl border border-dashed border-accent/70 px-6 py-20 text-center">
+
                 <Search size={36} className="text-primary/40" />
+
                 <h3 className="mt-4 font-display text-2xl text-primary">
                   No pieces match yet
                 </h3>
+
                 <p className="mt-2 max-w-sm text-sm leading-6 text-secondary/65">
                   Try a wider price range, remove a filter, or ask us about a
                   custom piece made to your measurements.
                 </p>
+
                 <div className="mt-6 flex flex-wrap justify-center gap-3">
+
                   <button
                     type="button"
                     onClick={resetAll}
@@ -400,15 +712,19 @@ export default function ShopPage() {
                   >
                     Reset filters
                   </button>
+
                   <Link
                     to="/custom-furniture"
                     className="grid h-11 place-items-center rounded-full border border-primary px-6 text-sm font-medium text-primary hover:bg-accent/30"
                   >
                     Request custom furniture
                   </Link>
+
                 </div>
               </div>
+
             ) : (
+              /* Product cards */
               <div
                 className={
                   view === "grid"
@@ -416,14 +732,16 @@ export default function ShopPage() {
                     : "flex flex-col gap-5"
                 }
               >
-                {filtered.map((p) => (
+                {filtered.map((product) => (
                   <ProductCard
-                    key={p.id}
-                    product={p}
+                    key={product.id}
+                    product={product}
                     view={view}
                     showMeta
-                    saved={saved.has(p.id)}
-                    comparing={compare.some((x) => x.id === p.id)}
+                    saved={saved.has(product.id)}
+                    comparing={compare.some(
+                      (item) => item.id === product.id
+                    )}
                     onToggleWishlist={toggleSave}
                     onToggleCompare={toggleCompare}
                     onAddToCart={addToCart}
@@ -431,6 +749,7 @@ export default function ShopPage() {
                 ))}
               </div>
             )}
+
           </section>
         </div>
       </div>
@@ -440,13 +759,16 @@ export default function ShopPage() {
       {/* Mobile filter sheet */}
       {drawer && (
         <div className="fixed inset-0 z-60 lg:hidden">
+
           <button
             type="button"
             aria-label="Close filters"
             onClick={() => setDrawer(false)}
             className="absolute inset-0 bg-secondary/50"
           />
+
           <div className="absolute inset-x-0 bottom-0 max-h-[85vh] overflow-y-auto rounded-t-4xl bg-background p-6 shadow-2xl">
+
             <button
               type="button"
               onClick={() => setDrawer(false)}
@@ -455,18 +777,27 @@ export default function ShopPage() {
             >
               <X size={22} />
             </button>
-            <FilterPanel filters={filters} onChange={update} onReset={resetAll} />
+
+            <FilterPanel
+              filters={filters}
+              onChange={update}
+              onReset={resetAll}
+            />
+
             <button
               type="button"
               onClick={() => setDrawer(false)}
               className="mt-6 h-12 w-full rounded-full bg-primary font-medium text-background"
             >
-              Show {filtered.length} {filtered.length === 1 ? "piece" : "pieces"}
+              Show {filtered.length}{" "}
+              {filtered.length === 1 ? "piece" : "pieces"}
             </button>
+
           </div>
         </div>
       )}
 
+      {/* Compare tray */}
       <CompareTray
         items={compare}
         onRemove={toggleCompare}
@@ -477,13 +808,16 @@ export default function ShopPage() {
       <div
         aria-live="polite"
         className={`pointer-events-none fixed inset-x-0 bottom-24 z-70 flex justify-center px-4 transition duration-300 ${
-          toast ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0"
+          toast
+            ? "translate-y-0 opacity-100"
+            : "translate-y-3 opacity-0"
         }`}
       >
         <p className="rounded-full bg-secondary px-5 py-3 text-sm text-background shadow-xl">
           {toast}
         </p>
       </div>
+
     </main>
   );
 }
