@@ -21,7 +21,7 @@ export default function App() {
       <Route path="/signup" element={<SignUpPage />} />
       <Route path="/shop" element={<ShopPage />} />
       <Route path="/consultation" element={<ConsultationPage />} />
-      <Route path="/product/:id" element={<ProductDetailsPage />} />
+      <Route path="/shop/:id" element={<ProductDetailsPage />} />
 
       {/* Logged-in users */}
       <Route element={<ProtectedRoute />}>

@@ -23,7 +23,7 @@ export default function Hero() {
 
           <div className="mt-10 flex flex-wrap gap-3 sm:mt-12 sm:gap-4">
             <a
-              href="#"
+              href="/shop"
               className="group inline-flex items-center gap-6 rounded-3xl bg-primary px-7 py-4 text-lg font-medium text-background shadow-[0_10px_24px_rgba(113,62,38,0.25)] transition duration-300 hover:bg-secondary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary motion-safe:hover:translate-x-2 motion-safe:active:scale-[0.98] sm:px-9 sm:py-5 sm:text-xl"
             >
               Shop Now

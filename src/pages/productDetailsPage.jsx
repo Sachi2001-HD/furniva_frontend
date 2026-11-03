@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   Armchair,
@@ -6,11 +6,8 @@ import {
   ArrowRight,
   Check,
   ChevronDown,
-  ChevronLeft,
-  ChevronRight,
   Heart,
   Leaf,
-  Maximize2,
   Minus,
   Plus,
   Ruler,
@@ -24,6 +21,7 @@ import Footer from "../components/footer";
 import { useAuth } from "../context/authContext";
 import { apiRequest } from "../utils/api";
 import { addToCart } from "../utils/cart";
+import ProductGallery from "../components/ProductGallery";
 
 const MAX_PER_ORDER = 20;
 const LOW_STOCK = 5;
@@ -44,8 +42,6 @@ const swatchFor = (...names) => {
 };
 
 const formatMoney = (n) => `Rs. ${Number(n).toLocaleString("en-US")}`;
-
-const pad = (n) => String(n).padStart(2, "0");
 
 const focusRing =
   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary";
@@ -99,6 +95,7 @@ function Stars({ rating }) {
           <Star key={i} size={17} className="shrink-0 fill-current" />
         ))}
       </span>
+
       <span
         className="absolute inset-0 flex gap-0.5 overflow-hidden text-highlight"
         style={{ width: `${(rating / 5) * 100}%` }}
@@ -124,109 +121,9 @@ function Accordion({ title, defaultOpen = false, children }) {
           className="shrink-0 text-secondary/60 transition group-open:rotate-180 motion-reduce:transition-none"
         />
       </summary>
+
       <div className="pb-6">{children}</div>
     </details>
-  );
-}
-
-function Lightbox({ images, index, name, onIndex, onClose }) {
-  const panelRef = useRef(null);
-  const count = images.length;
-
-  const go = (delta) => onIndex((index + delta + count) % count);
-
-  useEffect(() => {
-    const previous = document.activeElement;
-    const overflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    panelRef.current?.querySelector("button")?.focus();
-
-    return () => {
-      document.body.style.overflow = overflow;
-      previous?.focus?.();
-    };
-  }, []);
-
-  useEffect(() => {
-    const onKey = (event) => {
-      if (event.key === "Escape") {
-        onClose();
-      } else if (event.key === "ArrowLeft" && count > 1) {
-        go(-1);
-      } else if (event.key === "ArrowRight" && count > 1) {
-        go(1);
-      } else if (event.key === "Tab") {
-        const items = panelRef.current?.querySelectorAll("button:not([disabled])");
-        if (!items?.length) return;
-
-        const first = items[0];
-        const last = items[items.length - 1];
-
-        if (event.shiftKey && document.activeElement === first) {
-          event.preventDefault();
-          last.focus();
-        } else if (!event.shiftKey && document.activeElement === last) {
-          event.preventDefault();
-          first.focus();
-        }
-      }
-    };
-
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  });
-
-  const arrow =
-    "absolute top-1/2 grid h-12 w-12 -translate-y-1/2 place-items-center rounded-full bg-background/90 text-primary shadow transition hover:bg-background focus-visible:outline-2 focus-visible:outline-primary";
-
-  return (
-    <div
-      ref={panelRef}
-      role="dialog"
-      aria-modal="true"
-      aria-label={`${name} images`}
-      onClick={(event) => {
-        if (event.target === event.currentTarget) onClose();
-      }}
-      className="fixed inset-0 z-80 flex items-center justify-center bg-secondary/95 p-4 sm:p-10"
-    >
-      <button
-        type="button"
-        onClick={onClose}
-        aria-label="Close image viewer"
-        className="absolute right-4 top-4 grid h-12 w-12 place-items-center rounded-full bg-background/90 text-primary shadow transition hover:bg-background focus-visible:outline-2 focus-visible:outline-primary"
-      >
-        <X size={22} aria-hidden="true" />
-      </button>
-
-      {count > 1 && (
-        <>
-          <button
-            type="button"
-            onClick={() => go(-1)}
-            aria-label="Previous image"
-            className={`${arrow} left-4`}
-          >
-            <ChevronLeft size={22} aria-hidden="true" />
-          </button>
-          <button
-            type="button"
-            onClick={() => go(1)}
-            aria-label="Next image"
-            className={`${arrow} right-4`}
-          >
-            <ChevronRight size={22} aria-hidden="true" />
-          </button>
-        </>
-      )}
-
-      <SafeImage
-        src={images[index]}
-        alt={`${name}, image ${index + 1} of ${count}`}
-        fit="object-contain"
-        className="max-h-[85vh] max-w-full rounded-2xl"
-      />
-    </div>
   );
 }
 
@@ -234,6 +131,7 @@ function PageSkeleton() {
   return (
     <div aria-hidden="true" className="grid gap-10 lg:grid-cols-2 lg:gap-16">
       <div className="aspect-4/5 rounded-32px bg-accent/40 motion-safe:animate-pulse" />
+
       <div className="space-y-5 pt-4">
         <span className="block h-4 w-40 rounded bg-accent/40 motion-safe:animate-pulse" />
         <span className="block h-14 w-3/4 rounded bg-accent/40 motion-safe:animate-pulse" />
@@ -251,9 +149,14 @@ function Message({ title, text, children }) {
       <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-accent/40 text-primary">
         <Armchair size={26} aria-hidden="true" />
       </span>
+
       <h1 className="mt-6 font-display text-3xl sm:text-4xl">{title}</h1>
+
       <p className="mt-3 leading-7 text-secondary/70">{text}</p>
-      <div className="mt-8 flex flex-wrap justify-center gap-3">{children}</div>
+
+      <div className="mt-8 flex flex-wrap justify-center gap-3">
+        {children}
+      </div>
     </div>
   );
 }
@@ -268,19 +171,19 @@ export default function ProductDetailsPage() {
 
   const [product, setProduct] = useState(null);
   const [related, setRelated] = useState([]);
-  const [status, setStatus] = useState("loading"); 
+  const [status, setStatus] = useState("loading");
   const [errorText, setErrorText] = useState("");
   const [reloadKey, setReloadKey] = useState(0);
 
-  const [imageIndex, setImageIndex] = useState(0);
-  const [lightbox, setLightbox] = useState(false);
   const [qty, setQty] = useState(1);
   const [liked, setLiked] = useState(false);
   const [toast, setToast] = useState("");
 
   useEffect(() => {
     if (!toast) return;
+
     const timer = setTimeout(() => setToast(""), 3500);
+
     return () => clearTimeout(timer);
   }, [toast]);
 
@@ -296,14 +199,15 @@ export default function ProductDetailsPage() {
     apiRequest(`/products/${id}`)
       .then((data) => {
         if (!active) return;
+
         setProduct(data);
-        setImageIndex(0);
         setQty(1);
         setLiked(false);
         setStatus("ready");
       })
       .catch((error) => {
         if (!active) return;
+
         setErrorText(error.message);
         setStatus(error.status === 404 ? "missing" : "error");
       });
@@ -319,7 +223,9 @@ export default function ProductDetailsPage() {
 
     let active = true;
     const categoryId = product.category?._id;
-    const others = (list) => list.filter((item) => item._id !== product._id);
+
+    const others = (list) =>
+      list.filter((item) => item._id !== product._id);
 
     const load = async () => {
       let items = [];
@@ -329,11 +235,13 @@ export default function ProductDetailsPage() {
           const data = await apiRequest(
             `/products?category=${categoryId}&limit=4`
           );
+
           items = others(data.products ?? []);
         }
 
         if (items.length < 3) {
           const data = await apiRequest("/products?limit=6");
+
           others(data.products ?? []).forEach((item) => {
             if (!items.some((existing) => existing._id === item._id)) {
               items.push(item);
@@ -355,6 +263,7 @@ export default function ProductDetailsPage() {
 
   useEffect(() => {
     if (product) document.title = `${product.name} | Furniva`;
+
     return () => {
       document.title = "Furniva";
     };
@@ -362,6 +271,7 @@ export default function ProductDetailsPage() {
 
   const requireLogin = () => {
     if (isLoggedIn) return true;
+
     navigate("/login", { state: { from: location.pathname } });
     return false;
   };
@@ -374,22 +284,30 @@ export default function ProductDetailsPage() {
         await navigator.share({ title: product.name, url });
         return;
       }
+
       await navigator.clipboard.writeText(url);
       setToast("Link copied");
     } catch (error) {
-      if (error?.name !== "AbortError") setToast("Couldn't share the link");
+      if (error?.name !== "AbortError") {
+        setToast("Couldn't share the link");
+      }
     }
   };
 
   const handleAdd = (maxQty) => {
     if (!requireLogin()) return;
+
     addToCart(product._id, qty, maxQty);
     setToast(`${qty} × ${product.name} added to your cart`);
   };
 
   const handleLike = () => {
     if (!requireLogin()) return;
-    setToast(liked ? "Removed from your wishlist" : "Saved to your wishlist");
+
+    setToast(
+      liked ? "Removed from your wishlist" : "Saved to your wishlist"
+    );
+
     setLiked((previous) => !previous);
   };
 
@@ -401,6 +319,7 @@ export default function ProductDetailsPage() {
         <p role="status" className="sr-only">
           Loading product
         </p>
+
         <PageSkeleton />
       </>
     );
@@ -428,6 +347,7 @@ export default function ProductDetailsPage() {
         >
           Try again
         </button>
+
         <Link
           to="/shop"
           className={`inline-flex h-12 items-center rounded-full border border-accent px-7 text-base font-medium text-primary transition hover:bg-accent/30 ${focusRing}`}
@@ -437,7 +357,6 @@ export default function ProductDetailsPage() {
       </Message>
     );
   } else if (product) {
-    const images = product.images ?? [];
     const stock = product.stock ?? 0;
     const soldOut = stock <= 0;
     const maxQty = Math.max(1, Math.min(stock, MAX_PER_ORDER));
@@ -445,16 +364,30 @@ export default function ProductDetailsPage() {
 
     const onOffer =
       product.offerPrice != null && product.offerPrice < product.price;
+
     const price = onOffer ? product.offerPrice : product.price;
+
     const percent = onOffer
       ? Math.round((1 - product.offerPrice / product.price) * 100)
       : 0;
 
     const stockInfo = soldOut
-      ? { text: "Out of stock", dot: "bg-[#B5392B]", color: "text-[#8A1F14]" }
+      ? {
+          text: "Out of stock",
+          dot: "bg-[#B5392B]",
+          color: "text-[#8A1F14]",
+        }
       : stock <= LOW_STOCK
-      ? { text: `Only ${stock} left`, dot: "bg-highlight", color: "text-[#7A4A12]" }
-      : { text: "In stock", dot: "bg-[#4C8F5E]", color: "text-[#2F5D3A]" };
+        ? {
+            text: `Only ${stock} left`,
+            dot: "bg-highlight",
+            color: "text-[#7A4A12]",
+          }
+        : {
+            text: "In stock",
+            dot: "bg-[#4C8F5E]",
+            color: "text-[#2F5D3A]",
+          };
 
     const finish = product.colour || "Natural finish";
     const { w, d, h } = product.dimensions ?? {};
@@ -467,9 +400,6 @@ export default function ProductDetailsPage() {
       ["Reference", `FNV-${String(product._id).slice(-6).toUpperCase()}`],
     ].filter(([, value]) => value);
 
-    const arrow =
-      "absolute top-1/2 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-background/90 text-primary shadow transition hover:bg-background focus-visible:outline-2 focus-visible:outline-primary";
-
     content = (
       <>
         {/* Breadcrumb */}
@@ -480,19 +410,24 @@ export default function ProductDetailsPage() {
                 Home
               </Link>
             </li>
+
             <li aria-hidden="true">/</li>
+
             <li>
               <Link to="/shop" className="hover:text-primary hover:underline">
                 Shop
               </Link>
             </li>
+
             {category && (
               <>
                 <li aria-hidden="true">/</li>
                 <li>{category}</li>
               </>
             )}
+
             <li aria-hidden="true">/</li>
+
             <li aria-current="page" className="font-medium text-secondary">
               {product.name}
             </li>
@@ -502,100 +437,12 @@ export default function ProductDetailsPage() {
         <div className="grid gap-10 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:gap-16">
           {/* Gallery */}
           <div className="lg:sticky lg:top-28 lg:self-start">
-            <div className="relative overflow-hidden rounded-32px bg-accent/30 shadow-[0_30px_80px_rgba(113,62,38,0.15)]">
-              <SafeImage
-                src={images[imageIndex]}
-                alt={product.name}
-                className="aspect-4/5 w-full"
-              />
-
-              <div className="absolute left-5 top-5 flex flex-wrap gap-2">
-                {product.badge && (
-                  <span className="rounded-lg bg-background px-4 py-2 text-xs font-medium uppercase tracking-[0.15em] text-primary shadow-sm">
-                    {product.badge}
-                  </span>
-                )}
-                {onOffer && (
-                  <span className="rounded-lg bg-highlight px-3 py-2 text-xs font-semibold text-secondary shadow-sm">
-                    -{percent}%
-                  </span>
-                )}
-              </div>
-
-              {images.length > 1 && (
-                <>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setImageIndex(
-                        (imageIndex - 1 + images.length) % images.length
-                      )
-                    }
-                    aria-label="Previous image"
-                    className={`${arrow} left-4`}
-                  >
-                    <ChevronLeft size={20} aria-hidden="true" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setImageIndex((imageIndex + 1) % images.length)}
-                    aria-label="Next image"
-                    className={`${arrow} right-4`}
-                  >
-                    <ChevronRight size={20} aria-hidden="true" />
-                  </button>
-                </>
-              )}
-
-              {images.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setLightbox(true)}
-                  aria-label="View larger image"
-                  className="absolute bottom-5 right-5 grid h-12 w-12 place-items-center rounded-full bg-background/90 text-primary shadow transition hover:bg-background focus-visible:outline-2 focus-visible:outline-primary"
-                >
-                  <Maximize2 size={19} aria-hidden="true" />
-                </button>
-              )}
-            </div>
-
-            {images.length > 1 && (
-              <ul aria-label="Product images" className="mt-4 flex gap-3 overflow-x-auto p-1">
-                {images.map((image, index) => (
-                  <li key={image} className="shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => setImageIndex(index)}
-                      aria-label={`Show image ${index + 1} of ${images.length}`}
-                      aria-current={index === imageIndex ? "true" : undefined}
-                      className={`block h-20 w-20 overflow-hidden rounded-2xl border-2 transition ${focusRing} ${
-                        index === imageIndex
-                          ? "border-primary"
-                          : "border-transparent opacity-70 hover:opacity-100"
-                      }`}
-                    >
-                      <SafeImage
-                        src={image}
-                        className="h-full w-full"
-                        iconSize={22}
-                      />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-
-            <div className="mt-5 flex items-center justify-between gap-4 text-sm text-secondary/65">
-              <span className="min-w-0 truncate">
-                {pad(imageIndex + 1)} / {product.name}
-              </span>
-              {product.material && (
-                <span className="inline-flex shrink-0 items-center gap-2">
-                  <Leaf size={16} aria-hidden="true" />
-                  {product.material}
-                </span>
-              )}
-            </div>
+            <ProductGallery
+              key={product._id}
+              images={product.images}
+              model={product.model3d}
+              name={product.name}
+            />
           </div>
 
           {/* Details */}
@@ -604,6 +451,7 @@ export default function ProductDetailsPage() {
               <p className="text-sm font-medium uppercase tracking-[0.2em] text-primary">
                 {category ? `${category} collection` : "Furniva"}
               </p>
+
               <button
                 type="button"
                 onClick={handleShare}
@@ -621,6 +469,7 @@ export default function ProductDetailsPage() {
             {product.reviewCount > 0 && (
               <p className="mt-4 flex flex-wrap items-center gap-3">
                 <Stars rating={product.rating} />
+
                 <span className="text-secondary/70">
                   {product.rating.toFixed(1)} ({product.reviewCount}{" "}
                   {product.reviewCount === 1 ? "review" : "reviews"})
@@ -632,12 +481,14 @@ export default function ProductDetailsPage() {
               <p className="font-display text-4xl text-primary sm:text-5xl">
                 {formatMoney(price)}
               </p>
+
               {onOffer && (
                 <>
                   <s className="text-xl text-secondary/60">
                     <span className="sr-only">Original price </span>
                     {formatMoney(product.price)}
                   </s>
+
                   <span className="rounded-full bg-highlight px-3 py-1 text-sm font-semibold text-secondary">
                     -{percent}%
                   </span>
@@ -645,8 +496,13 @@ export default function ProductDetailsPage() {
               )}
             </div>
 
-            <p className={`mt-3 flex items-center gap-2 text-[15px] font-medium ${stockInfo.color}`}>
-              <span aria-hidden="true" className={`h-2.5 w-2.5 rounded-full ${stockInfo.dot}`} />
+            <p
+              className={`mt-3 flex items-center gap-2 text-[15px] font-medium ${stockInfo.color}`}
+            >
+              <span
+                aria-hidden="true"
+                className={`h-2.5 w-2.5 rounded-full ${stockInfo.dot}`}
+              />
               {stockInfo.text}
             </p>
 
@@ -660,14 +516,22 @@ export default function ProductDetailsPage() {
                 <p className="text-xs font-medium uppercase tracking-[0.15em] text-secondary/65">
                   Wood &amp; finish
                 </p>
+
                 <p className="mt-3 flex items-center gap-3 text-lg">
                   <span
                     aria-hidden="true"
-                    style={{ backgroundColor: swatchFor(product.material, product.colour) }}
+                    style={{
+                      backgroundColor: swatchFor(
+                        product.material,
+                        product.colour
+                      ),
+                    }}
                     className="h-7 w-7 shrink-0 rounded-full border border-secondary/15"
                   />
+
                   {product.material}
                 </p>
+
                 <p className="mt-1.5 text-secondary/65">{finish}</p>
               </div>
 
@@ -676,11 +540,19 @@ export default function ProductDetailsPage() {
                   <p className="text-xs font-medium uppercase tracking-[0.15em] text-secondary/65">
                     Dimensions
                   </p>
+
                   <p className="mt-3 flex items-center gap-3 text-lg">
-                    <Ruler size={20} aria-hidden="true" className="shrink-0 text-primary" />
+                    <Ruler
+                      size={20}
+                      aria-hidden="true"
+                      className="shrink-0 text-primary"
+                    />
                     {w} × {d} × {h} cm
                   </p>
-                  <p className="mt-1.5 text-secondary/65">Width × depth × height</p>
+
+                  <p className="mt-1.5 text-secondary/65">
+                    Width × depth × height
+                  </p>
                 </div>
               )}
             </div>
@@ -701,9 +573,14 @@ export default function ProductDetailsPage() {
                 >
                   <Minus size={18} aria-hidden="true" />
                 </button>
-                <span aria-live="polite" className="w-10 text-center text-lg font-medium">
+
+                <span
+                  aria-live="polite"
+                  className="w-10 text-center text-lg font-medium"
+                >
                   {qty}
                 </span>
+
                 <button
                   type="button"
                   onClick={() => setQty((q) => Math.min(maxQty, q + 1))}
@@ -762,8 +639,12 @@ export default function ProductDetailsPage() {
 
               <Accordion title="Care for your piece">
                 <ul className="list-disc space-y-2 pl-5 text-[15px] leading-7 text-secondary/75">
-                  <li>Wipe with a soft, dry cloth. Dry any spills straight away.</li>
-                  <li>Use coasters, mats and trivets to protect the surface.</li>
+                  <li>
+                    Wipe with a soft, dry cloth. Dry any spills straight away.
+                  </li>
+                  <li>
+                    Use coasters, mats and trivets to protect the surface.
+                  </li>
                   <li>Keep away from direct sunlight and heat sources.</li>
                   <li>Refresh the finish with a wood oil once or twice a year.</li>
                 </ul>
@@ -775,9 +656,10 @@ export default function ProductDetailsPage() {
                     Delivery details and charges are confirmed at checkout, and
                     we’ll keep you updated on the status of your order.
                   </p>
+
                   <p>
-                    If something isn’t right when your piece arrives, contact us
-                    and we’ll help put it right.
+                    If something isn’t right when your piece arrives, contact
+                    us and we’ll help put it right.
                   </p>
                 </div>
               </Accordion>
@@ -794,6 +676,7 @@ export default function ProductDetailsPage() {
             <p className="text-sm font-medium uppercase tracking-[0.2em] text-primary">
               A home that feels like you
             </p>
+
             <h2
               id="plan-heading"
               className="mt-3 font-display text-3xl tracking-tight sm:text-4xl"
@@ -801,11 +684,13 @@ export default function ProductDetailsPage() {
               Not sure how it fits your space?
             </h2>
           </div>
+
           <Link
             to="/consultation"
             className={`group inline-flex h-12 items-center gap-3 rounded-full border border-primary px-7 text-base font-medium text-primary transition hover:bg-primary hover:text-background ${focusRing}`}
           >
             Plan your space
+
             <ArrowRight
               size={18}
               aria-hidden="true"
@@ -824,11 +709,13 @@ export default function ProductDetailsPage() {
               >
                 A little more to love.
               </h2>
+
               <Link
                 to="/shop"
                 className={`group inline-flex shrink-0 items-center gap-2 pb-1 text-base font-medium text-primary hover:underline ${focusRing}`}
               >
                 View all
+
                 <ArrowRight
                   size={18}
                   aria-hidden="true"
@@ -844,24 +731,32 @@ export default function ProductDetailsPage() {
 
                 return (
                   <li key={item._id}>
-                    <Link to={`/shop/${item._id}`} className={`group block rounded-[28px] ${focusRing}`}>
+                    <Link
+                      to={`/shop/${item._id}`}
+                      className={`group block rounded-[28px] ${focusRing}`}
+                    >
                       <div className="overflow-hidden rounded-[28px] bg-accent/30">
                         <SafeImage
                           src={item.images?.[0]}
                           className="aspect-square w-full transition duration-500 motion-safe:group-hover:scale-105"
                         />
                       </div>
+
                       <p className="mt-4 text-sm text-secondary/65">
                         {[item.material, item.category?.name]
                           .filter(Boolean)
                           .join(" · ")}
                       </p>
+
                       <div className="mt-1 flex items-start justify-between gap-4">
                         <h3 className="font-display text-2xl leading-snug group-hover:text-primary">
                           {item.name}
                         </h3>
+
                         <p className="shrink-0 pt-1 text-lg">
-                          {formatMoney(itemOnOffer ? item.offerPrice : item.price)}
+                          {formatMoney(
+                            itemOnOffer ? item.offerPrice : item.price
+                          )}
                         </p>
                       </div>
                     </Link>
@@ -885,16 +780,6 @@ export default function ProductDetailsPage() {
             Back to the collection
           </Link>
         </div>
-
-        {lightbox && images.length > 0 && (
-          <Lightbox
-            images={images}
-            index={imageIndex}
-            name={product.name}
-            onIndex={setImageIndex}
-            onClose={() => setLightbox(false)}
-          />
-        )}
       </>
     );
   }
@@ -915,6 +800,7 @@ export default function ProductDetailsPage() {
           <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white/20">
             <Check size={16} aria-hidden="true" />
           </span>
+
           {toast}
         </div>
       )}
