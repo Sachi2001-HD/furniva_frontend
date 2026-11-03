@@ -18,10 +18,12 @@ import {
 } from "lucide-react";
 import AdminLayout from "../components/admin/adminLayout";
 import ProductFormDrawer from "../components/admin/productFormDrawer";
+import CategoryFormModal from "../components/admin/categoryFormModal";
+import CategoryManagerModal from "../components/admin/categoryManagerModal";
 import { useAuth } from "../context/authContext";
 import { apiRequest } from "../utils/api";
 
-const LOW_STOCK = 5; // this many or fewer counts as "low stock"
+const LOW_STOCK = 5;
 const PAGE_SIZE = 10;
 
 const stockFilters = [
@@ -89,6 +91,9 @@ const nextSort = (key, current) => {
   return cycle[(cycle.indexOf(current) + 1) % cycle.length];
 };
 
+const sortByName = (list) =>
+  [...list].sort((a, b) => a.name.localeCompare(b.name));
+
 const formatMoney = (n) => `Rs. ${Number(n).toLocaleString("en-US")}`;
 
 const compactMoney = (n) =>
@@ -111,7 +116,6 @@ const sorters = {
   "price-asc": (a, b) => sellingPrice(a) - sellingPrice(b),
   "stock-asc": (a, b) => a.stock - b.stock,
 };
-
 
 function Thumb({ src, className = "h-14 w-14" }) {
   const [failed, setFailed] = useState(false);
@@ -544,7 +548,6 @@ function Pagination({ start, count, total, current, pages, onPage }) {
   );
 }
 
-
 function SortTh({ label, sortKey, sort, onSort, className = "px-4" }) {
   const active = sortGroups[sortKey].values.includes(sort);
   const descending = sort === "price-desc";
@@ -750,6 +753,12 @@ export default function AdminProductsPage() {
   const [busy, setBusy] = useState({});
   const [toast, setToast] = useState(null);
 
+  // Category management
+  const [managerOpen, setManagerOpen] = useState(false);
+  const [categoryForm, setCategoryForm] = useState(null); // null | "new" | category object
+  const [categorySaving, setCategorySaving] = useState(false);
+  const [categoryError, setCategoryError] = useState("");
+
   // Open the add product panel
   const creating =
     location.pathname.replace(/\/+$/, "") === "/admin/products/new";
@@ -926,6 +935,112 @@ export default function AdminProductsPage() {
       fail(error);
     } finally {
       setBusyFor(product._id, false);
+    }
+  };
+
+  // Category actions
+  const openCategoryForm = (category = null) => {
+    setCategoryError("");
+    setCategoryForm(category ?? "new");
+  };
+
+  const closeCategoryForm = () => {
+    setCategoryError("");
+    setCategoryForm(null);
+  };
+
+  const saveCategory = async (payload) => {
+    const existing =
+      categoryForm && categoryForm !== "new" ? categoryForm : null;
+
+    setCategorySaving(true);
+    setCategoryError("");
+
+    try {
+      if (existing) {
+        const saved = await apiRequest(`/categories/${existing._id}`, {
+          method: "PUT",
+          token,
+          body: payload,
+        });
+
+        setCategories((previous) =>
+          sortByName(previous.map((c) => (c._id === saved._id ? saved : c)))
+        );
+        
+        setProducts((previous) =>
+          previous.map((p) =>
+            p.category?._id === saved._id
+              ? { ...p, category: { ...p.category, name: saved.name } }
+              : p
+          )
+        );
+        showToast("success", "Category updated");
+      } else {
+        const saved = await apiRequest("/categories", {
+          method: "POST",
+          token,
+          body: payload,
+        });
+
+        setCategories((previous) => sortByName([...previous, saved]));
+        showToast("success", `${saved.name} category added`);
+      }
+
+      closeCategoryForm();
+    } catch (error) {
+      if (error.status === 401) fail(error);
+      else setCategoryError(error.message);
+    } finally {
+      setCategorySaving(false);
+    }
+  };
+
+  const toggleCategory = async (category) => {
+    const isActive = category.isActive === false;
+    setBusyFor(category._id, true);
+
+    try {
+      const saved = await apiRequest(`/categories/${category._id}/status`, {
+        method: "PATCH",
+        token,
+        body: { isActive },
+      });
+
+      setCategories((previous) =>
+        previous.map((c) => (c._id === saved._id ? saved : c))
+      );
+      showToast(
+        "success",
+        `${category.name} is now ${isActive ? "visible in" : "hidden from"} the shop`
+      );
+    } catch (error) {
+      fail(error);
+    } finally {
+      setBusyFor(category._id, false);
+    }
+  };
+
+  const deleteCategory = async (category) => {
+    setBusyFor(category._id, true);
+
+    try {
+      await apiRequest(`/categories/${category._id}`, {
+        method: "DELETE",
+        token,
+      });
+
+      setCategories((previous) => previous.filter((c) => c._id !== category._id));
+      setFilters((previous) =>
+        previous.category === category._id
+          ? { ...previous, category: "all" }
+          : previous
+      );
+      showToast("success", `${category.name} category deleted`);
+    } catch (error) {
+      fail(error);
+    } finally {
+      setBusyFor(category._id, false);
     }
   };
 
@@ -1113,8 +1228,29 @@ export default function AdminProductsPage() {
               onClick={() => setFilter("category", category._id)}
             >
               {category.name}
+              {category.isActive === false && (
+                <span className="text-xs opacity-70">(hidden)</span>
+              )}
             </Chip>
           ))}
+
+          <button
+            type="button"
+            onClick={() => openCategoryForm()}
+            className="inline-flex h-10 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-dashed border-primary/60 px-4 text-sm font-medium text-primary transition hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          >
+            <Plus size={15} aria-hidden="true" />
+            New category
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setManagerOpen(true)}
+            className="inline-flex h-10 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-dashed border-primary/60 px-4 text-sm font-medium text-primary transition hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          >
+            <Pencil size={15} aria-hidden="true" />
+            Manage categories
+          </button>
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-accent/40 pt-4">
@@ -1271,6 +1407,31 @@ export default function AdminProductsPage() {
           error={formError}
           onClose={closeDrawer}
           onSubmit={saveProduct}
+        />
+      )}
+
+      {managerOpen && (
+        <CategoryManagerModal
+          categories={categories}
+          counts={categoryCounts}
+          busy={busy}
+          locked={categoryForm !== null}
+          onClose={() => setManagerOpen(false)}
+          onNew={() => openCategoryForm()}
+          onEdit={(category) => openCategoryForm(category)}
+          onToggle={toggleCategory}
+          onDelete={deleteCategory}
+        />
+      )}
+
+      {categoryForm !== null && (
+        <CategoryFormModal
+          key={categoryForm === "new" ? "new" : categoryForm._id}
+          category={categoryForm === "new" ? null : categoryForm}
+          saving={categorySaving}
+          error={categoryError}
+          onClose={closeCategoryForm}
+          onSubmit={saveCategory}
         />
       )}
     </AdminLayout>

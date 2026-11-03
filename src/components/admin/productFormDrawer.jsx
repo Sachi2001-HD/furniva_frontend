@@ -1,10 +1,16 @@
 import { useEffect, useRef, useState } from "react";
-import { ChevronDown, Plus, Trash2, X } from "lucide-react";
+import { Box, ChevronDown, Trash2, Upload, X } from "lucide-react";
+import { useAuth } from "../../context/authContext";
+import { uploadImages } from "../../utils/uploadImages";
+import { uploadModel } from "../../utils/uploadModel";
 
 const base =
   "w-full rounded-2xl border border-accent/70 bg-background px-4 text-base outline-none transition placeholder:text-secondary/40 focus:border-primary focus:ring-4 focus:ring-primary/15 aria-[invalid=true]:border-[#9B2C1F]";
 const inputClass = `${base} h-11`;
 const textareaClass = `${base} min-h-28 resize-y py-3 leading-6`;
+
+const MAX_IMAGES = 8;
+const MAX_PER_UPLOAD = 5; 
 
 const badgeOptions = [
   { value: "", label: "No badge" },
@@ -27,6 +33,7 @@ const initialValues = (product) => ({
   badge: product?.badge ?? "",
   isFeatured: !!product?.isFeatured,
   images: product?.images ?? [],
+  model3d: product?.model3d ?? "",
 });
 
 function validate(v) {
@@ -144,15 +151,21 @@ export default function ProductFormDrawer({
   onClose,
   onSubmit,
 }) {
+  const { token } = useAuth();
+
   const panelRef = useRef(null);
+  const fileRef = useRef(null);
   const closeRef = useRef(onClose);
   closeRef.current = onClose;
 
   const [shown, setShown] = useState(false);
   const [attempted, setAttempted] = useState(false);
   const [values, setValues] = useState(() => initialValues(product));
-  const [imageInput, setImageInput] = useState("");
   const [imageError, setImageError] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const modelRef = useRef(null);
+  const [modelUploading, setModelUploading] = useState(false);
+  const [modelError, setModelError] = useState("");
 
   const isEdit = !!product;
 
@@ -173,7 +186,7 @@ export default function ProductFormDrawer({
       if (event.key !== "Tab") return;
 
       const items = panelRef.current?.querySelectorAll(
-        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled])'
+        'a[href], button:not([disabled]), input:not([disabled]):not([tabindex="-1"]), select:not([disabled]), textarea:not([disabled])'
       );
       if (!items?.length) return;
 
@@ -219,29 +232,42 @@ export default function ProductFormDrawer({
       ? Math.round((1 - offer / price) * 100)
       : 0;
 
-  const addImage = () => {
-    const url = imageInput.trim();
-    if (!url) return;
+  const handleFiles = async (event) => {
+    const files = Array.from(event.target.files ?? []);
+    event.target.value = ""; 
+    if (files.length === 0) return;
 
-    if (!/^(https?:\/\/|\/)\S+$/i.test(url)) {
-      setImageError("Use a full link (https://...) or a path starting with /.");
+    const room = MAX_IMAGES - values.images.length;
+    const allowed = Math.min(room, MAX_PER_UPLOAD);
+
+    if (room <= 0) {
+      setImageError(`You can add up to ${MAX_IMAGES} images.`);
       return;
     }
-    if (values.images.includes(url)) {
-      setImageError("That image is already added.");
-      return;
-    }
-    if (values.images.length >= 8) {
-      setImageError("You can add up to 8 images.");
+    if (files.length > allowed) {
+      setImageError(
+        `You can add ${allowed} more image${allowed === 1 ? "" : "s"} now.`
+      );
       return;
     }
 
-    setValues((previousValues) => ({
-      ...previousValues,
-      images: [...previousValues.images, url],
-    }));
-    setImageInput("");
+    setUploading(true);
     setImageError("");
+
+    try {
+      const urls = await uploadImages(files, token);
+      setValues((previousValues) => ({
+        ...previousValues,
+        images: [
+          ...previousValues.images,
+          ...urls.filter((url) => !previousValues.images.includes(url)),
+        ],
+      }));
+    } catch (uploadError) {
+      setImageError(uploadError.message);
+    } finally {
+      setUploading(false);
+    }
   };
 
   const removeImage = (url) =>
@@ -255,6 +281,24 @@ export default function ProductFormDrawer({
       ...previousValues,
       images: [url, ...previousValues.images.filter((image) => image !== url)],
     }));
+
+  const handleModel = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    setModelUploading(true);
+    setModelError("");
+
+    try {
+      const url = await uploadModel(file, token);
+      setValues((previousValues) => ({ ...previousValues, model3d: url }));
+    } catch (uploadFailure) {
+      setModelError(uploadFailure.message);
+    } finally {
+      setModelUploading(false);
+    }
+  };
 
   const handleSubmit = (event) => {
     event.preventDefault();
@@ -282,6 +326,7 @@ export default function ProductFormDrawer({
         h: Number(values.h),
       },
       images: values.images,
+      model3d: values.model3d || null,
       stock: Number(values.stock),
       badge: values.badge || null,
       isFeatured: values.isFeatured,
@@ -580,45 +625,93 @@ export default function ProductFormDrawer({
             <section>
               <SectionTitle>Images</SectionTitle>
 
-              <div className="flex gap-2">
-                <div className="min-w-0 flex-1">
-                  <label htmlFor="pf-image" className="sr-only">
-                    Image link
-                  </label>
-                  <input
-                    id="pf-image"
-                    value={imageInput}
-                    onChange={(event) => {
-                      setImageInput(event.target.value);
-                      setImageError("");
-                    }}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter") {
-                        event.preventDefault();
-                        addImage();
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/*"
+                multiple
+                tabIndex={-1}
+                aria-hidden="true"
+                onChange={handleFiles}
+                className="sr-only"
+              />
+
+              {/* 3D model */}
+              <section>
+                <SectionTitle>3D model (optional)</SectionTitle>
+
+                <input
+                  ref={modelRef}
+                  type="file"
+                  accept=".glb,model/gltf-binary"
+                  tabIndex={-1}
+                  aria-hidden="true"
+                  onChange={handleModel}
+                  className="sr-only"
+                />
+
+                {values.model3d && (
+                  <div className="mb-3 flex items-center justify-between gap-3 rounded-2xl border border-accent/60 bg-background px-4 py-3">
+                    <span className="flex min-w-0 items-center gap-2 text-sm">
+                      <Box size={18} aria-hidden="true" className="shrink-0 text-primary" />
+                      <span className="truncate">
+                        {decodeURIComponent(values.model3d.split("/").pop())}
+                      </span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setValues((previousValues) => ({ ...previousValues, model3d: "" }))
                       }
-                    }}
-                    placeholder="https://... or /images/sofa.jpg"
-                    aria-invalid={!!imageError || !!showError("images")}
-                    aria-describedby="pf-image-error"
-                    className={inputClass}
-                  />
-                </div>
+                      className="shrink-0 text-sm font-medium text-[#9B2C1F] hover:underline focus-visible:outline-2 focus-visible:outline-primary"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                )}
+
                 <button
                   type="button"
-                  onClick={addImage}
-                  className="inline-flex h-11 shrink-0 items-center gap-2 rounded-2xl border border-primary px-4 text-[15px] font-medium text-primary transition hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                  onClick={() => modelRef.current?.click()}
+                  disabled={modelUploading}
+                  className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-primary/60 bg-background px-4 py-5 text-[15px] font-medium text-primary transition hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  <Plus size={16} aria-hidden="true" />
-                  Add
+                  <Upload size={18} aria-hidden="true" />
+                  {modelUploading
+                    ? "Uploading..."
+                    : values.model3d
+                      ? "Replace 3D model"
+                      : "Upload 3D model (.glb)"}
                 </button>
-              </div>
+                <p className="mt-1.5 text-sm text-secondary/60">
+                  .glb files only, up to 10 MB. Customers can rotate it on the product page.
+                </p>
+
+                {modelError && (
+                  <p role="alert" className="mt-1.5 text-sm text-[#9B2C1F]">
+                    {modelError}
+                  </p>
+                )}
+              </section>
+
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                disabled={uploading || values.images.length >= MAX_IMAGES}
+                aria-invalid={!!imageError || !!showError("images")}
+                aria-describedby="pf-image-error"
+                className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-primary/60 bg-background px-4 py-6 text-[15px] font-medium text-primary transition hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-60 aria-invalid=true:border-[#9B2C1F]"
+              >
+                <Upload size={18} aria-hidden="true" />
+                {uploading ? "Uploading..." : "Upload images from your device"}
+              </button>
 
               <p id="pf-image-error" className="mt-1.5 text-sm text-[#9B2C1F]">
                 {imageError || showError("images") || ""}
               </p>
               <p className="text-sm text-secondary/60">
-                The first image is the cover shown in the shop.
+                JPG, PNG or WebP, up to 5 MB each, 5 at a time. The first image is
+                the cover shown in the shop.
               </p>
 
               {values.images.length > 0 && (
@@ -685,7 +778,7 @@ export default function ProductFormDrawer({
               </button>
               <button
                 type="submit"
-                disabled={saving}
+                disabled={saving || uploading || modelUploading}
                 className="inline-flex h-12 flex-2 items-center justify-center rounded-full bg-primary px-6 text-base font-medium text-background shadow-[0_10px_24px_rgba(113,62,38,0.25)] transition hover:bg-secondary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {saving ? "Saving..." : isEdit ? "Save changes" : "Add product"}
