@@ -10,6 +10,7 @@ import ShopPage from "./pages/shopPage";
 import ConsultationPage from "./pages/consultationPage";
 import AdminProductsPage from "./pages/adminProductsPage";
 import ProductDetailsPage from "./pages/productDetailsPage";
+import AdminOrdersPage from "./pages/adminOrdersPage";
 
 export default function App() {
   return (
@@ -32,6 +33,7 @@ export default function App() {
         <Route path="/admin" element={<AdminDashboardPage />} />
         <Route path="/admin/sales" element={<AdminSalesPage />} />
         <Route path="/admin/products/*" element={<AdminProductsPage />} />
+        <Route path="/admin/orders" element={<AdminOrdersPage />} />
       </Route>
     </Routes>
   );
