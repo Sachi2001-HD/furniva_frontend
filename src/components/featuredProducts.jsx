@@ -26,9 +26,9 @@ export default function FeaturedProducts({
     <section
       id="featured"
       aria-labelledby="featured-heading"
-      className="px-4 pb-24 sm:px-8"
+      className="px-4 sm:px-8"
     >
-      <div className="mx-auto max-w-[1680px] border-t border-accent pt-8 sm:pt-16">
+      <div className="mx-auto max-w-[1680px] border-t border-accent pt-4 sm:pt-8">
         <h2
           id="featured-heading"
           className="mb-8 font-display text-4xl leading-tight tracking-tight sm:mb-10 sm:text-5xl"

@@ -135,7 +135,7 @@ export default function ShopByCategory({ shopTo = "/shop" }) {
     <section
       id="categories"
       aria-labelledby="categories-heading"
-      className="px-4 pb-20 sm:px-8"
+      className="px-4 pb-15 sm:px-8"
     >
       <div className="mx-auto max-w-[1680px] border-t border-accent pt-4 sm:pt-16">
         <div className="mb-8 sm:mb-10">
