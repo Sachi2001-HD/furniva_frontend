@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import {
   Bell,
@@ -18,6 +17,7 @@ import {
 } from "lucide-react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/authContext";
+import CartButton from "./cart/cartButton";
 
 const links = [
   { label: "Home", path: "/" },
@@ -181,18 +181,7 @@ export default function CustomerNavbar({ cartCount = 0 }) {
             <Heart size={21} />
           </button>
 
-          <button
-            aria-label={`Cart, ${cartCount} items`}
-            onClick={() => go("/cart")}
-            className="ml-1 flex h-9 items-center gap-2 rounded-full bg-primary pl-3.5 pr-1.5 text-[14px] font-medium text-background transition hover:bg-primary/90"
-          >
-            <ShoppingBag size={17} />
-            <span className="hidden sm:inline">Cart</span>
-
-            <span className="grid h-6 min-w-6 place-items-center rounded-full bg-highlight px-1 text-xs">
-              {cartCount}
-            </span>
-          </button>
+          <CartButton />
 
           <span className="mx-2 hidden h-6 w-px bg-accent sm:block" />
 

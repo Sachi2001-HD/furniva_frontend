@@ -24,6 +24,7 @@ import CompareTray from "../components/shop/compareTray";
 
 import { useAuth } from "../context/authContext";
 import { apiRequest } from "../utils/api";
+import { addToCart } from "../utils/cart";
 
 const MAX_PRICE = 10000000;
 
@@ -130,14 +131,13 @@ export default function ShopPage() {
   // Interaction states
   const [saved, setSaved] = useState(() => new Set());
   const [compare, setCompare] = useState([]);
-  const [cartCount, setCartCount] = useState(0);
   const [drawer, setDrawer] = useState(false);
   const [toast, setToast] = useState("");
 
   const searchRef = useRef(null);
   const toastTimer = useRef(null);
 
-//Fetch products from the backend
+  // Fetch products from the backend
   useEffect(() => {
     let isMounted = true;
 
@@ -179,7 +179,7 @@ export default function ShopPage() {
     };
   }, []);
 
-  //Category tabs
+  // Category tabs
   const tabs = useMemo(() => {
     const categoryMap = new Map();
 
@@ -219,7 +219,7 @@ export default function ShopPage() {
     ];
   }, [products]);
 
-  //Common Functions
+  // Common functions
   const update = (patch) => {
     setFilters((prev) => ({
       ...prev,
@@ -263,7 +263,7 @@ export default function ShopPage() {
     action();
   };
 
-  //Wishlist
+  // Wishlist
   const toggleSave = (product) => {
     requireAuth(() => {
       setSaved((prev) => {
@@ -278,16 +278,26 @@ export default function ShopPage() {
     });
   };
 
-  //Cart
-  const addToCart = (product) => {
+  // Cart
+  const handleAddToCart = (product) => {
     requireAuth(() => {
-      setCartCount((count) => count + 1);
+      try {
+        addToCart(
+          product._id || product.id,
+          1,
+          product.stock
+        );
 
-      showToast(`${product.name} added to your cart`);
+        showToast(`${product.name} added to your cart`);
+      } catch (error) {
+        showToast(
+          error.message || "Unable to add this product to your cart"
+        );
+      }
     });
   };
 
-  //Product Comparison
+  // Product comparison
   const toggleCompare = (product) => {
     const exists = compare.some(
       (item) => item.id === product.id
@@ -305,6 +315,7 @@ export default function ShopPage() {
     );
   };
 
+  // Keyboard shortcut for search
   useEffect(() => {
     const onKey = (e) => {
       const tag = document.activeElement?.tagName;
@@ -325,7 +336,7 @@ export default function ShopPage() {
     };
   }, []);
 
-  //Search, filter and sort products
+  // Search, filter and sort products
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
 
@@ -405,7 +416,7 @@ export default function ShopPage() {
       : list;
   }, [products, category, filters, query, sort, saved]);
 
-  //Active filter chips
+  // Active filter chips
   const chips = [
     ...filters.materials.map((material) => ({
       key: material,
@@ -458,7 +469,7 @@ export default function ShopPage() {
 
         <div className="px-4 pt-4 sm:px-8 sm:pt-6">
           <div className="pointer-events-auto">
-            <Navbar cartCount={cartCount} />
+            <Navbar />
           </div>
         </div>
       </div>
@@ -744,7 +755,7 @@ export default function ShopPage() {
                     )}
                     onToggleWishlist={toggleSave}
                     onToggleCompare={toggleCompare}
-                    onAddToCart={addToCart}
+                    onAddToCart={handleAddToCart}
                   />
                 ))}
               </div>

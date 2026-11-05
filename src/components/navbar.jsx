@@ -2,12 +2,8 @@ import { useAuth } from "../context/authContext";
 import GuestNavbar from "./guestNavbar";
 import CustomerNavbar from "./customerNavbar";
 
-export default function Navbar({ cartCount = 0 }) {
+export default function Navbar() {
   const { isLoggedIn } = useAuth();
 
-  return isLoggedIn ? (
-    <CustomerNavbar cartCount={cartCount} />
-  ) : (
-    <GuestNavbar cartCount={cartCount} />
-  );
+  return isLoggedIn ? <CustomerNavbar /> : <GuestNavbar />;
 }
