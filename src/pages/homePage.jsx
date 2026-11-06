@@ -4,6 +4,7 @@ import ShopByCategory from "../components/shopByCategory";
 import FeaturedProducts from "../components/featuredProducts";
 import WhyChooseFurniva from "../components/whyChooseFurniva";
 import NewArrivals from "../components/newArrivals";
+import CustomFurniture from "../components/customFurniture";
 import PlanYourSpace from "../components/planYourSpace";
 import Footer from "../components/footer";
 import { useFetchData } from "../hooks/useFetchData";
@@ -11,7 +12,6 @@ import { optimizeImage } from "../utils/cloudinary";
 
 const FEATURED_COUNT = 3;
 
-// Maps an API product to the shape ProductCard already uses
 const toCardProduct = (product) => ({
   id: product._id,
   name: product.name,
@@ -20,7 +20,9 @@ const toCardProduct = (product) => ({
   offerPrice: product.offerPrice ?? undefined,
   rating: product.rating,
   reviewCount: product.reviewCount,
+  stock: product.stock,
   image: optimizeImage(product.images?.[0], 800),
+  source: product,
 });
 
 export default function HomePage() {
@@ -45,9 +47,10 @@ export default function HomePage() {
         error={error}
         onRetry={reload}
       />
-      <NewArrivals />
-      <PlanYourSpace />
       <WhyChooseFurniva />
+      <NewArrivals />
+      <CustomFurniture />
+      <PlanYourSpace />
       <Footer />
     </main>
   );

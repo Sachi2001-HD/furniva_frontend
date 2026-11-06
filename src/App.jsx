@@ -17,10 +17,11 @@ import AdminProductsPage from "./pages/adminProductsPage";
 import AdminOrdersPage from "./pages/adminOrdersPage";
 
 import CartDrawer from "./components/cart/cartDrawer";
-import CheckoutPage from "./pages/CheckoutPage";
+import CheckoutPage from "./pages/checkoutPage";
 import OrdersPage from "./pages/OrdersPage";
-import OrderDetailPage from "./pages/OrderDetailPage";
+import OrderDetailPage from "./pages/orderDetailPage";
 import ScrollToTop from "./components/scrollToTop";
+import CustomFurniturePage from "./pages/customFurniturePage";
 
 export default function App() {
   return (
@@ -37,6 +38,7 @@ export default function App() {
         <Route path="/shop" element={<ShopPage />} />
         <Route path="/consultation" element={<ConsultationPage />} />
         <Route path="/shop/:id" element={<ProductDetailsPage />} />
+        <Route path="/custom" element={<CustomFurniturePage />} />
 
         {/* Logged-in customer routes */}
         <Route element={<ProtectedRoute />}>

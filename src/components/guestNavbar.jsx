@@ -7,7 +7,7 @@ const links = [
   { label: "Home", path: "/" },
   { label: "Shop", path: "/shop" },
   { label: "Consultation", path: "/consultation" },
-  { label: "Custom Furniture", path: "/custom-furniture" },
+  { label: "Custom Furniture", path: "/custom" },
   { label: "About Us", path: "/about" },
 ];
 
