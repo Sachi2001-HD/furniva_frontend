@@ -22,6 +22,7 @@ import OrdersPage from "./pages/OrdersPage";
 import OrderDetailPage from "./pages/orderDetailPage";
 import ScrollToTop from "./components/scrollToTop";
 import CustomFurniturePage from "./pages/customFurniturePage";
+import MyProfilePage from "./pages/myProfilePage";
 
 export default function App() {
   return (
@@ -69,6 +70,16 @@ export default function App() {
             }
           />
         </Route>
+
+        <Route
+          path="/account"
+          element={
+            <RequireAuth>
+              <MyProfilePage />
+            </RequireAuth>
+          }
+        />
+
 
         {/* Admin-only routes */}
         <Route element={<AdminRoute />}>
