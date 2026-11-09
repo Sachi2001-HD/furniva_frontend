@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import {
   Search,
   SlidersHorizontal,
@@ -12,6 +12,9 @@ import {
   Coffee,
   Utensils,
   Archive,
+  BedDouble,
+  Laptop,
+  TreePine,
 } from "lucide-react";
 
 import AnnouncementBar from "../components/announcementBar";
@@ -23,23 +26,34 @@ import FilterPanel from "../components/shop/filterPanel";
 import CompareTray from "../components/shop/compareTray";
 
 import { useAuth } from "../context/authContext";
+import { useCart } from "../context/cartContext"; // CHANGED
 import { apiRequest } from "../utils/api";
-import { addToCart } from "../utils/cart";
 
 const MAX_PRICE = 10000000;
+
+const PAGE_LIMIT = 50;
+const MAX_PAGES = 20;
 
 const formatPrice = (n) =>
   `Rs. ${Number(n || 0).toLocaleString("en-US")}`;
 
-const categoryIcons = {
-  sofa: Sofa,
-  sofas: Sofa,
-  chair: Armchair,
-  chairs: Armchair,
-  table: Coffee,
-  tables: Coffee,
-  dining: Utensils,
-  storage: Archive,
+const categoryIcons = [
+  ["living", Sofa],
+  ["sofa", Sofa],
+  ["bed", BedDouble],
+  ["dining", Utensils],
+  ["office", Laptop],
+  ["desk", Laptop],
+  ["storage", Archive],
+  ["outdoor", TreePine],
+  ["garden", TreePine],
+  ["chair", Armchair],
+  ["table", Coffee],
+];
+
+const iconFor = (label = "") => {
+  const name = label.toLowerCase();
+  return categoryIcons.find(([keyword]) => name.includes(keyword))?.[1] ?? Archive;
 };
 
 const sortOptions = [
@@ -111,13 +125,46 @@ const normalizeProduct = (product) => {
   };
 };
 
+const listOf = (response) =>
+  Array.isArray(response)
+    ? response
+    : response?.products || response?.data?.products || [];
+
+async function fetchAllProducts() {
+  const first = await apiRequest(`/products?limit=${PAGE_LIMIT}&page=1`);
+  const list = [...listOf(first)];
+
+  const pages = Math.min(Number(first?.pages) || 1, MAX_PAGES);
+
+  if (pages > 1) {
+    const rest = await Promise.all(
+      Array.from({ length: pages - 1 }, (_, index) =>
+        apiRequest(`/products?limit=${PAGE_LIMIT}&page=${index + 2}`)
+      )
+    );
+    rest.forEach((response) => list.push(...listOf(response)));
+  }
+
+  return list;
+}
+
 export default function ShopPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { isLoggedIn } = useAuth();
+  const { addItem } = useCart(); // CHANGED
+  const [searchParams, setSearchParams] = useSearchParams(); // CHANGED
+
+  const category = searchParams.get("category") || "all";
+
+  const setCategory = (id) => {
+    const next = new URLSearchParams(searchParams);
+    if (id === "all") next.delete("category");
+    else next.set("category", id);
+    setSearchParams(next);
+  };
 
   // Main states
-  const [category, setCategory] = useState("all");
   const [filters, setFilters] = useState(defaultFilters);
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState("featured");
@@ -125,6 +172,7 @@ export default function ShopPage() {
 
   // Product states
   const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]); // CHANGED
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -137,26 +185,29 @@ export default function ShopPage() {
   const searchRef = useRef(null);
   const toastTimer = useRef(null);
 
-  // Fetch products from the backend
+  // Fetch products and categories from the backend
   useEffect(() => {
     let isMounted = true;
 
-    const fetchProducts = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
         setError("");
 
-        const response = await apiRequest("/products");
+        const [productList, categoryResponse] = await Promise.all([
+          fetchAllProducts(),
+          // If this fails, the tabs fall back to the categories found on the products
+          apiRequest("/categories").catch(() => null),
+        ]);
 
-        const productList = Array.isArray(response)
-          ? response
-          : response?.products || response?.data?.products || [];
+        if (!isMounted) return;
 
-        const normalizedProducts = productList.map(normalizeProduct);
-
-        if (isMounted) {
-          setProducts(normalizedProducts);
-        }
+        setProducts(productList.map(normalizeProduct));
+        setCategories(
+          Array.isArray(categoryResponse)
+            ? categoryResponse
+            : categoryResponse?.categories || []
+        );
       } catch (err) {
         console.error("Error fetching products:", err);
 
@@ -172,41 +223,35 @@ export default function ShopPage() {
       }
     };
 
-    fetchProducts();
+    fetchData();
 
     return () => {
       isMounted = false;
     };
   }, []);
 
-  // Category tabs
   const tabs = useMemo(() => {
-    const categoryMap = new Map();
-
+    const counts = new Map();
     products.forEach((product) => {
-      if (!product.category || !product.categoryName) return;
-
-      if (!categoryMap.has(product.category)) {
-        categoryMap.set(product.category, {
-          id: product.category,
-          label: product.categoryName,
-        });
+      if (product.category) {
+        counts.set(product.category, (counts.get(product.category) ?? 0) + 1);
       }
     });
 
-    const dynamicCategories = Array.from(categoryMap.values()).map(
-      (item) => {
-        const iconKey = item.label.toLowerCase().trim();
+    let source = categories.map((item) => ({ id: item._id, label: item.name }));
 
-        return {
-          ...item,
-          icon: categoryIcons[iconKey] || Archive,
-          count: products.filter(
-            (product) => product.category === item.id
-          ).length,
-        };
-      }
-    );
+    if (source.length === 0) {
+      const seen = new Map();
+      products.forEach((product) => {
+        if (product.category && product.categoryName && !seen.has(product.category)) {
+          seen.set(product.category, {
+            id: product.category,
+            label: product.categoryName,
+          });
+        }
+      });
+      source = [...seen.values()];
+    }
 
     return [
       {
@@ -215,9 +260,13 @@ export default function ShopPage() {
         icon: LayoutGrid,
         count: products.length,
       },
-      ...dynamicCategories,
+      ...source.map((item) => ({
+        ...item,
+        icon: iconFor(item.label),
+        count: counts.get(item.id) ?? 0,
+      })),
     ];
-  }, [products]);
+  }, [products, categories]);
 
   // Common functions
   const update = (patch) => {
@@ -278,21 +327,12 @@ export default function ShopPage() {
     });
   };
 
-  // Cart
   const handleAddToCart = (product) => {
     requireAuth(() => {
-      try {
-        addToCart(
-          product._id || product.id,
-          1,
-          product.stock
-        );
+      const result = addItem(product);
 
-        showToast(`${product.name} added to your cart`);
-      } catch (error) {
-        showToast(
-          error.message || "Unable to add this product to your cart"
-        );
+      if (!result.ok) {
+        showToast(`${product.name} is out of stock`);
       }
     });
   };
@@ -479,7 +519,7 @@ export default function ShopPage() {
         {/* Hero carousel */}
         <ShopHero onExplore={scrollToCollection} />
 
-        {/* Heading + search */}
+        {/* Heading + search + Featured sort */}
         <div className="mt-12 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
 
           <div>
@@ -492,35 +532,60 @@ export default function ShopPage() {
             </h1>
           </div>
 
-          <div className="relative w-full lg:max-w-xl">
-            <Search
-              size={20}
-              className="absolute left-5 top-1/2 -translate-y-1/2 text-secondary/50"
-            />
+          <div className="flex w-full flex-col gap-3 sm:flex-row lg:max-w-2xl">
 
-            <input
-              ref={searchRef}
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search furniture, wood, style…"
-              aria-label="Search furniture"
-              className="h-14 w-full rounded-full border border-accent/70 bg-background pl-14 pr-16 text-base outline-none transition placeholder:text-secondary/40 focus:border-primary focus:ring-4 focus:ring-primary/15"
-            />
+            <div className="relative w-full flex-1">
+              <Search
+                size={20}
+                className="absolute left-5 top-1/2 -translate-y-1/2 text-secondary/50"
+              />
 
-            {query ? (
-              <button
-                type="button"
-                onClick={() => setQuery("")}
-                aria-label="Clear search"
-                className="absolute right-3 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full text-secondary/60 hover:bg-accent/30"
+              <input
+                ref={searchRef}
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search furniture, wood, style…"
+                aria-label="Search furniture"
+                className="h-14 w-full rounded-full border border-accent/70 bg-background pl-14 pr-16 text-base outline-none transition placeholder:text-secondary/40 focus:border-primary focus:ring-4 focus:ring-primary/15"
+              />
+
+              {query ? (
+                <button
+                  type="button"
+                  onClick={() => setQuery("")}
+                  aria-label="Clear search"
+                  className="absolute right-3 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full text-secondary/60 hover:bg-accent/30"
+                >
+                  <X size={18} />
+                </button>
+              ) : (
+                <kbd className="absolute right-5 top-1/2 hidden -translate-y-1/2 rounded-md border border-accent/70 px-2 py-0.5 text-xs text-secondary/50 sm:block">
+                  /
+                </kbd>
+              )}
+            </div>
+
+            {/* Featured / Sort dropdown */}
+            <div className="relative shrink-0">
+              <select
+                value={sort}
+                onChange={(e) => setSort(e.target.value)}
+                aria-label="Sort products"
+                className="h-14 w-full appearance-none rounded-full border border-accent/60 bg-background pl-5 pr-12 text-[15px] text-secondary outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/15 sm:w-52"
               >
-                <X size={18} />
-              </button>
-            ) : (
-              <kbd className="absolute right-5 top-1/2 hidden -translate-y-1/2 rounded-md border border-accent/70 px-2 py-0.5 text-xs text-secondary/50 sm:block">
-                /
-              </kbd>
-            )}
+                {sortOptions.map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+
+              <ChevronDown
+                size={16}
+                className="pointer-events-none absolute right-5 top-1/2 -translate-y-1/2 text-secondary/60"
+              />
+            </div>
+
           </div>
         </div>
 
@@ -583,26 +648,6 @@ export default function ShopPage() {
                   </span>
                 )}
               </button>
-
-              <div className="relative">
-                <select
-                  value={sort}
-                  onChange={(e) => setSort(e.target.value)}
-                  aria-label="Sort products"
-                  className="h-11 appearance-none rounded-full border border-accent/60 bg-background pl-4 pr-10 text-[15px] text-secondary outline-none focus:border-primary focus:ring-4 focus:ring-primary/15"
-                >
-                  {sortOptions.map(([value, label]) => (
-                    <option key={value} value={value}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
-
-                <ChevronDown
-                  size={16}
-                  className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-secondary/60"
-                />
-              </div>
 
               <div className="hidden rounded-full bg-accent/30 p-1 sm:flex">
                 {[
