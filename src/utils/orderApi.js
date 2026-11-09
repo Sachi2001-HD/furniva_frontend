@@ -44,8 +44,9 @@ export const buildOrderPayload = (lines, form) => ({
   shippingAddress: {
     fullName: form.fullName.trim(),
     phone: form.phone.trim(),
-    addressLine1: form.addressLine1.trim(),
-    addressLine2: form.addressLine2.trim(),
+    address: [form.addressLine1.trim(), form.addressLine2.trim()]
+      .filter(Boolean)
+      .join(", "),
     city: form.city.trim(),
     postalCode: form.postalCode.trim(),
   },
