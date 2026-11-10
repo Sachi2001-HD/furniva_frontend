@@ -7,6 +7,8 @@ import { useAuth } from "../context/authContext";
 import { useCart } from "../context/cartContext";
 import { buildOrderPayload, placeOrder } from "../utils/orderApi";
 import { formatMoney, sellingPrice } from "../utils/format";
+import SavedAddressPicker from "../components/addresses/savedAddressPicker";
+import { fetchAddresses } from "../utils/addressApi";
 
 const DELIVERY_FEE = null;
 
@@ -191,6 +193,53 @@ export default function CheckoutPage() {
     paymentMethod: PAYMENT_METHODS[0].value,
     notes: "",
   }));
+
+  const [savedAddresses, setSavedAddresses] = useState([]);
+const [addressId, setAddressId] = useState("new");
+
+const applyAddress = (address) => {
+  setAddressId(address._id);
+  setForm((previous) => ({
+    ...previous,
+    fullName: address.fullName,
+    phone: address.phone,
+    addressLine1: address.address,
+    addressLine2: "",
+    city: address.city,
+    postalCode: address.postalCode ?? "",
+  }));
+};
+
+const useNewAddress = () => {
+  setAddressId("new");
+  setForm((previous) => ({
+    ...previous,
+    addressLine1: "",
+    addressLine2: "",
+    city: "",
+    postalCode: "",
+  }));
+};
+
+// Load saved addresses and fill in the default one
+useEffect(() => {
+  let active = true;
+
+  fetchAddresses(token)
+    .then((list) => {
+      if (!active) return;
+      setSavedAddresses(list);
+      const preferred = list.find((item) => item.isDefault);
+      if (preferred) applyAddress(preferred);
+    })
+    .catch(() => {}); // checkout still works with a typed address
+
+  return () => {
+    active = false;
+  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [token]);
+
   const [attempted, setAttempted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
@@ -289,6 +338,12 @@ export default function CheckoutPage() {
           className="space-y-8"
         >
           <Card title="Delivery details" hint="Where should we deliver your order?">
+            <SavedAddressPicker
+              addresses={savedAddresses}
+              selectedId={addressId}
+              onSelect={applyAddress}
+              onNew={useNewAddress}
+            />
             <div className="space-y-5">
               <div className="grid gap-5 sm:grid-cols-2">
                 <Field id="co-name" label="Full name" error={showError("fullName")}>

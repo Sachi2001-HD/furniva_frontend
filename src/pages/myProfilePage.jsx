@@ -910,14 +910,14 @@ export default function MyProfilePage() {
                 {!isAdmin && (
                   <>
                     <QuickLink
-                      to="/my-consultations"
+                      to="/consultation"
                       icon={CalendarDays}
                       title="My consultations"
                       description="View your consultation bookings."
                     />
 
                     <QuickLink
-                      to="/my-custom-requests"
+                      to="/custom-furniture"
                       icon={Pencil}
                       title="Custom furniture requests"
                       description="Track your furniture design requests."

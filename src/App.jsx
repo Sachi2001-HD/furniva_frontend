@@ -23,6 +23,7 @@ import OrderDetailPage from "./pages/orderDetailPage";
 import ScrollToTop from "./components/scrollToTop";
 import CustomFurniturePage from "./pages/customFurniturePage";
 import MyProfilePage from "./pages/myProfilePage";
+import AddressesPage from "./pages/addressesPage";
 
 export default function App() {
   return (
@@ -39,7 +40,7 @@ export default function App() {
         <Route path="/shop" element={<ShopPage />} />
         <Route path="/consultation" element={<ConsultationPage />} />
         <Route path="/shop/:id" element={<ProductDetailsPage />} />
-        <Route path="/custom" element={<CustomFurniturePage />} />
+        <Route path="/custom-furniture" element={<CustomFurniturePage />} />
 
         {/* Logged-in customer routes */}
         <Route element={<ProtectedRoute />}>
@@ -80,6 +81,12 @@ export default function App() {
           }
         />
 
+        <Route
+          path="/account/addresses"
+          element={
+            <RequireAuth>
+              <AddressesPage />
+            </RequireAuth>} />
 
         {/* Admin-only routes */}
         <Route element={<AdminRoute />}>
