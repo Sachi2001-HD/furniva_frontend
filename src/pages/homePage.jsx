@@ -47,8 +47,8 @@ export default function HomePage() {
         error={error}
         onRetry={reload}
       />
-      <WhyChooseFurniva />
       <NewArrivals />
+      <WhyChooseFurniva />
       <CustomFurniture />
       <PlanYourSpace />
       <Footer />

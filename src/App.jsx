@@ -24,6 +24,7 @@ import ScrollToTop from "./components/scrollToTop";
 import CustomFurniturePage from "./pages/customFurniturePage";
 import MyProfilePage from "./pages/myProfilePage";
 import AddressesPage from "./pages/addressesPage";
+import ForgotPasswordPage from "./pages/forgotPasswordPage";
 
 export default function App() {
   return (
@@ -41,6 +42,7 @@ export default function App() {
         <Route path="/consultation" element={<ConsultationPage />} />
         <Route path="/shop/:id" element={<ProductDetailsPage />} />
         <Route path="/custom-furniture" element={<CustomFurniturePage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
         {/* Logged-in customer routes */}
         <Route element={<ProtectedRoute />}>

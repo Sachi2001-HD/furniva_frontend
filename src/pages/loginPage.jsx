@@ -332,10 +332,7 @@ export default function LoginPage() {
                   Remember me
                 </label>
 
-                <Link
-                  to="/forgot-password"
-                  className="font-medium text-primary hover:underline"
-                >
+                <Link to="/forgot-password" className="text-sm font-medium text-primary hover:underline">
                   Forgot password?
                 </Link>
               </div>
