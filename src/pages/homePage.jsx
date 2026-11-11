@@ -4,7 +4,6 @@ import ShopByCategory from "../components/shopByCategory";
 import FeaturedProducts from "../components/featuredProducts";
 import WhyChooseFurniva from "../components/whyChooseFurniva";
 import NewArrivals from "../components/newArrivals";
-import CustomFurniture from "../components/customFurniture";
 import PlanYourSpace from "../components/planYourSpace";
 import Footer from "../components/footer";
 import { useFetchData } from "../hooks/useFetchData";
@@ -49,7 +48,6 @@ export default function HomePage() {
       />
       <NewArrivals />
       <WhyChooseFurniva />
-      <CustomFurniture />
       <PlanYourSpace />
       <Footer />
     </main>

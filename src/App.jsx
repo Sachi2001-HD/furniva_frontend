@@ -25,6 +25,7 @@ import CustomFurniturePage from "./pages/customFurniturePage";
 import MyProfilePage from "./pages/myProfilePage";
 import AddressesPage from "./pages/addressesPage";
 import ForgotPasswordPage from "./pages/forgotPasswordPage";
+import ResetPasswordPage from "./pages/resetPasswordPage";
 
 export default function App() {
   return (
@@ -43,6 +44,7 @@ export default function App() {
         <Route path="/shop/:id" element={<ProductDetailsPage />} />
         <Route path="/custom-furniture" element={<CustomFurniturePage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
 
         {/* Logged-in customer routes */}
         <Route element={<ProtectedRoute />}>
