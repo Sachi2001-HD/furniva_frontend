@@ -26,6 +26,8 @@ import MyProfilePage from "./pages/myProfilePage";
 import AddressesPage from "./pages/addressesPage";
 import ForgotPasswordPage from "./pages/forgotPasswordPage";
 import ResetPasswordPage from "./pages/resetPasswordPage";
+import MyCustomRequestsPage from "./pages/myCustomRequestsPage";
+import MyConsultationsPage from "./pages/MyConsultationsPage";
 
 export default function App() {
   return (
@@ -45,6 +47,7 @@ export default function App() {
         <Route path="/custom-furniture" element={<CustomFurniturePage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
+
 
         {/* Logged-in customer routes */}
         <Route element={<ProtectedRoute />}>
@@ -90,6 +93,20 @@ export default function App() {
           element={
             <RequireAuth>
               <AddressesPage />
+            </RequireAuth>} />
+
+        <Route
+          path="/my-custom-requests"
+          element={
+            <RequireAuth>
+              <MyCustomRequestsPage />
+            </RequireAuth>} />
+
+        <Route
+          path="/my-consultations"
+          element={
+            <RequireAuth>
+              <MyConsultationsPage />
             </RequireAuth>} />
 
         {/* Admin-only routes */}
