@@ -25,12 +25,19 @@ function validate({ size, piece, details }) {
   SIZE_FIELDS.forEach(({ key }) => {
     const [min, max] = piece.ranges[key];
     const number = Number(size[key]);
-    if (size[key] === "" || !Number.isFinite(number) || number < min || number > max) {
+
+    if (
+      size[key] === "" ||
+      !Number.isFinite(number) ||
+      number < min ||
+      number > max
+    ) {
       errors[key] = `Enter ${min} to ${max} cm.`;
     }
   });
 
   if (!details.name.trim()) errors.name = "Enter your name.";
+
   if (!/^\S+@\S+\.\S+$/.test(details.email.trim())) {
     errors.email = "Enter a valid email address.";
   }
@@ -86,6 +93,7 @@ function Chip({ name, value, checked, onChange, children }) {
 function SizeField({ id, label, value, range, error, onChange }) {
   const [min, max] = range;
   const number = Number(value);
+
   const sliderValue = Number.isFinite(number)
     ? Math.min(Math.max(number, min), max)
     : min;
@@ -110,6 +118,7 @@ function SizeField({ id, label, value, range, error, onChange }) {
           aria-describedby={`${id}-hint`}
           className={`${inputClass} pr-12 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none`}
         />
+
         <span
           aria-hidden="true"
           className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-sm text-secondary/60"
@@ -131,7 +140,9 @@ function SizeField({ id, label, value, range, error, onChange }) {
 
       <p
         id={`${id}-hint`}
-        className={`mt-1.5 text-sm ${error ? "text-[#9B2C1F]" : "text-secondary/60"}`}
+        className={`mt-1.5 text-sm ${
+          error ? "text-[#9B2C1F]" : "text-secondary/60"
+        }`}
       >
         {error || `${min} to ${max} cm`}
       </p>
@@ -148,11 +159,13 @@ export default function DesignStudio() {
   const [finishKey, setFinishKey] = useState(FINISHES[0].key);
   const [size, setSize] = useState(() => toStrings(PIECES[0].defaults));
   const [sizeTouched, setSizeTouched] = useState(false);
+
   const [details, setDetails] = useState(() => ({
     name: [user?.firstName, user?.lastName].filter(Boolean).join(" "),
     email: user?.email ?? "",
     notes: "",
   }));
+
   const [attempted, setAttempted] = useState(false);
   const [brief, setBrief] = useState(null);
 
@@ -162,12 +175,16 @@ export default function DesignStudio() {
 
   const errors = validate({ size, piece, details });
   const sizeKeys = SIZE_FIELDS.map((field) => field.key);
+
   const showError = (key) =>
-    attempted || (sizeKeys.includes(key) && sizeTouched) ? errors[key] : undefined;
+    attempted || (sizeKeys.includes(key) && sizeTouched)
+      ? errors[key]
+      : undefined;
 
   const choosePiece = (key) => {
     setPieceKey(key);
-    // Switch to the new piece's typical size, unless the customer typed their own
+
+    // Switch to the new piece's typical size, unless the customer typed their own.
     if (!sizeTouched) {
       setSize(toStrings(PIECES.find((item) => item.key === key).defaults));
     }
@@ -184,7 +201,10 @@ export default function DesignStudio() {
   };
 
   const setDetail = (key) => (event) =>
-    setDetails((previous) => ({ ...previous, [key]: event.target.value }));
+    setDetails((previous) => ({
+      ...previous,
+      [key]: event.target.value,
+    }));
 
   const handleSubmit = (event) => {
     event.preventDefault();
@@ -192,7 +212,10 @@ export default function DesignStudio() {
 
     if (Object.keys(errors).length > 0) {
       setTimeout(
-        () => formRef.current?.querySelector('[aria-invalid="true"]')?.focus(),
+        () =>
+          formRef.current
+            ?.querySelector('[aria-invalid="true"]')
+            ?.focus(),
         0
       );
       return;
@@ -202,7 +225,11 @@ export default function DesignStudio() {
       piece,
       wood,
       finish,
-      size: { w: Number(size.w), d: Number(size.d), h: Number(size.h) },
+      size: {
+        w: Number(size.w),
+        d: Number(size.d),
+        h: Number(size.h),
+      },
       name: details.name.trim(),
       email: details.email.trim(),
       notes: details.notes.trim(),
@@ -220,6 +247,7 @@ export default function DesignStudio() {
         <p className="text-sm uppercase tracking-[0.2em] text-[#445444]">
           Design studio
         </p>
+
         <h2
           id="studio-heading"
           className="mt-4 font-display text-4xl leading-tight tracking-tight sm:text-5xl lg:text-6xl"
@@ -238,6 +266,7 @@ export default function DesignStudio() {
             {/* 1. Piece */}
             <fieldset>
               <StepLegend n={1}>What would you like made?</StepLegend>
+
               <div className="flex flex-wrap gap-3">
                 {PIECES.map((item) => (
                   <Chip
@@ -256,6 +285,7 @@ export default function DesignStudio() {
             {/* 2. Wood */}
             <fieldset>
               <StepLegend n={2}>Choose your wood</StepLegend>
+
               <div className="grid gap-4 sm:grid-cols-3">
                 {WOODS.map((item) => (
                   <label key={item.key} className="block cursor-pointer">
@@ -267,12 +297,19 @@ export default function DesignStudio() {
                       onChange={() => setWoodKey(item.key)}
                       className="peer sr-only"
                     />
+
                     <span className="relative flex items-center gap-4 rounded-2xl border border-accent/70 bg-accent/30 p-4 transition hover:border-primary/50 peer-checked:border-primary peer-checked:bg-[#FDF8F1] peer-checked:shadow-[0_0_0_3px_rgba(113,62,38,0.15)] peer-checked:[&_.check]:opacity-100 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-primary">
                       <WoodSwatch color={item.color} />
+
                       <span className="min-w-0">
-                        <span className="block font-medium">{item.label}</span>
-                        <span className="block text-sm text-secondary/65">{item.note}</span>
+                        <span className="block font-medium">
+                          {item.label}
+                        </span>
+                        <span className="block text-sm text-secondary/65">
+                          {item.note}
+                        </span>
                       </span>
+
                       <Check
                         size={18}
                         aria-hidden="true"
@@ -287,6 +324,7 @@ export default function DesignStudio() {
             {/* 3. Finish */}
             <fieldset>
               <StepLegend n={3}>Finish</StepLegend>
+
               <div className="flex flex-wrap gap-3">
                 {FINISHES.map((item) => (
                   <Chip
@@ -300,6 +338,7 @@ export default function DesignStudio() {
                   </Chip>
                 ))}
               </div>
+
               <p aria-live="polite" className="mt-4 text-secondary/70">
                 {finish.note}
               </p>
@@ -308,6 +347,7 @@ export default function DesignStudio() {
             {/* 4. Size */}
             <fieldset>
               <StepLegend n={4}>Size in centimetres</StepLegend>
+
               <div className="grid gap-6 sm:grid-cols-3">
                 {SIZE_FIELDS.map(({ key, label }) => (
                   <SizeField
@@ -336,32 +376,47 @@ export default function DesignStudio() {
             {/* 5. Details */}
             <fieldset>
               <StepLegend n={5}>Your details</StepLegend>
+
               <div className="space-y-6">
                 <div className="grid gap-6 sm:grid-cols-2">
                   <div>
-                    <label htmlFor="brief-name" className="mb-1.5 block text-sm font-medium">
+                    <label
+                      htmlFor="brief-name"
+                      className="mb-1.5 block text-sm font-medium"
+                    >
                       Name
                     </label>
+
                     <input
                       id="brief-name"
                       value={details.name}
                       onChange={setDetail("name")}
                       autoComplete="name"
                       aria-invalid={!!showError("name")}
-                      aria-describedby={showError("name") ? "brief-name-error" : undefined}
+                      aria-describedby={
+                        showError("name") ? "brief-name-error" : undefined
+                      }
                       className={inputClass}
                     />
+
                     {showError("name") && (
-                      <p id="brief-name-error" className="mt-1.5 text-sm text-[#9B2C1F]">
+                      <p
+                        id="brief-name-error"
+                        className="mt-1.5 text-sm text-[#9B2C1F]"
+                      >
                         {errors.name}
                       </p>
                     )}
                   </div>
 
                   <div>
-                    <label htmlFor="brief-email" className="mb-1.5 block text-sm font-medium">
+                    <label
+                      htmlFor="brief-email"
+                      className="mb-1.5 block text-sm font-medium"
+                    >
                       Email
                     </label>
+
                     <input
                       id="brief-email"
                       type="email"
@@ -369,11 +424,17 @@ export default function DesignStudio() {
                       onChange={setDetail("email")}
                       autoComplete="email"
                       aria-invalid={!!showError("email")}
-                      aria-describedby={showError("email") ? "brief-email-error" : undefined}
+                      aria-describedby={
+                        showError("email") ? "brief-email-error" : undefined
+                      }
                       className={inputClass}
                     />
+
                     {showError("email") && (
-                      <p id="brief-email-error" className="mt-1.5 text-sm text-[#9B2C1F]">
+                      <p
+                        id="brief-email-error"
+                        className="mt-1.5 text-sm text-[#9B2C1F]"
+                      >
                         {errors.email}
                       </p>
                     )}
@@ -381,10 +442,16 @@ export default function DesignStudio() {
                 </div>
 
                 <div>
-                  <label htmlFor="brief-notes" className="mb-1.5 block text-sm font-medium">
+                  <label
+                    htmlFor="brief-notes"
+                    className="mb-1.5 block text-sm font-medium"
+                  >
                     Anything else?
-                    <span className="ml-1.5 font-normal text-secondary/60">(optional)</span>
+                    <span className="ml-1.5 font-normal text-secondary/60">
+                      (optional)
+                    </span>
                   </label>
+
                   <textarea
                     id="brief-notes"
                     value={details.notes}
@@ -398,7 +465,10 @@ export default function DesignStudio() {
           </form>
 
           {/* Live summary */}
-          <aside aria-labelledby="summary-heading" className="lg:sticky lg:top-28">
+          <aside
+            aria-labelledby="summary-heading"
+            className="lg:sticky lg:top-28"
+          >
             <div className="rounded-2rem border border-accent/60 bg-[#F5E8DC] p-6 shadow-[0_20px_50px_rgba(113,62,38,0.12)] sm:p-8">
               <p
                 id="summary-heading"
@@ -415,17 +485,27 @@ export default function DesignStudio() {
                   width={size.w}
                   height={size.h}
                 />
+
                 <p className="mt-1 text-center text-xs text-secondary/55">
                   Front view, drawn to scale
                 </p>
               </div>
 
               <div className="mt-6 flex items-center gap-4">
-                <WoodSwatch color={wood.color} round={false} className="h-14 w-14" />
+                <WoodSwatch
+                  color={wood.color}
+                  round={false}
+                  className="h-14 w-14"
+                />
+
                 <div className="min-w-0">
-                  <p aria-live="polite" className="font-display text-3xl leading-tight">
+                  <p
+                    aria-live="polite"
+                    className="font-display text-3xl leading-tight"
+                  >
                     {piece.label}
                   </p>
+
                   <p className="text-secondary/70">
                     {wood.label} · {finish.label}
                   </p>
@@ -438,9 +518,12 @@ export default function DesignStudio() {
                     <dt className="text-xs uppercase tracking-[0.12em] text-secondary/60">
                       {label}
                     </dt>
+
                     <dd className="mt-1 font-display text-3xl">
                       {showValue(size[key])}
-                      <span className="ml-1 text-base text-secondary/70">cm</span>
+                      <span className="ml-1 text-base text-secondary/70">
+                        cm
+                      </span>
                     </dd>
                   </div>
                 ))}
@@ -459,22 +542,24 @@ export default function DesignStudio() {
                 />
               </button>
 
+              {/* Summary note */}
               <p className="mt-4 text-sm leading-6 text-secondary/65">
-                Your details stay on this page. Preparing a brief doesn’t send a
-                request or confirm a quote — share it with Furniva when ordering
-                opens.
+                Your details stay on this page until you send them. When you’re
+                ready, send your brief as a request and we’ll review it and
+                reply with a quote.
               </p>
             </div>
           </aside>
         </div>
 
-        {/* Phones: the summary sits below the form, so keep the action in reach */}
+        {/* Phones: summary*/}
         <div className="sticky bottom-4 z-30 mt-10 lg:hidden">
           <div className="flex items-center justify-between gap-4 rounded-2xl border border-accent/60 bg-[#F5E8DC]/95 p-3 pl-5 shadow-[0_12px_30px_rgba(113,62,38,0.2)] backdrop-blur">
             <p className="min-w-0 truncate text-sm">
               <span className="font-medium">{piece.label}</span>
               <span className="text-secondary/70"> · {wood.label}</span>
             </p>
+
             <button
               type="submit"
               form="brief-form"

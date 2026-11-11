@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Check, Copy, Download, X } from "lucide-react";
 import PiecePreview from "./piecePreview";
+import SendRequest from "./sendRequest";
 
 export const buildBriefText = (brief) =>
   [
@@ -41,11 +42,13 @@ export default function BriefModal({ brief, onClose }) {
         closeRef.current();
         return;
       }
+
       if (event.key !== "Tab") return;
 
       const focusable = panelRef.current?.querySelectorAll(
         'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled])'
       );
+
       if (!focusable?.length) return;
 
       const first = focusable[0];
@@ -71,7 +74,9 @@ export default function BriefModal({ brief, onClose }) {
 
   useEffect(() => {
     if (!copied) return;
+
     const timer = setTimeout(() => setCopied(false), 2200);
+
     return () => clearTimeout(timer);
   }, [copied]);
 
@@ -89,11 +94,14 @@ export default function BriefModal({ brief, onClose }) {
     const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
+
     link.href = url;
     link.download = `furniva-brief-${brief.piece.key}.txt`;
+
     document.body.appendChild(link);
     link.click();
     link.remove();
+
     URL.revokeObjectURL(url);
   };
 
@@ -101,7 +109,10 @@ export default function BriefModal({ brief, onClose }) {
     ["Piece", brief.piece.label],
     ["Timber", brief.wood.label],
     ["Finish", brief.finish.label],
-    ["Size", `${brief.size.w} × ${brief.size.d} × ${brief.size.h} cm (W × D × H)`],
+    [
+      "Size",
+      `${brief.size.w} × ${brief.size.d} × ${brief.size.h} cm (W × D × H)`,
+    ],
     ["Name", brief.name],
     ["Email", brief.email],
     ...(brief.notes ? [["Notes", brief.notes]] : []),
@@ -134,13 +145,17 @@ export default function BriefModal({ brief, onClose }) {
             <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[#2F5D3A] text-white">
               <Check size={22} aria-hidden="true" />
             </span>
+
             <div>
               <h2 id="brief-title" className="font-display text-2xl sm:text-3xl">
                 Your brief is ready
               </h2>
-              <p className="text-sm text-secondary/65">Prepared on {brief.date}</p>
+              <p className="text-sm text-secondary/65">
+                Prepared on {brief.date}
+              </p>
             </div>
           </div>
+
           <button
             type="button"
             onClick={onClose}
@@ -164,15 +179,27 @@ export default function BriefModal({ brief, onClose }) {
 
           <dl className="space-y-3">
             {rows.map(([term, detail]) => (
-              <div key={term} className="grid grid-cols-[80px_minmax(0,1fr)] gap-3">
+              <div
+                key={term}
+                className="grid grid-cols-[80px_minmax(0,1fr)] gap-3"
+              >
                 <dt className="text-sm text-secondary/60">{term}</dt>
-                <dd className="whitespace-pre-wrap wrap-break-word font-medium">{detail}</dd>
+                <dd className="whitespace-pre-wrap wrap-break-word font-medium">
+                  {detail}
+                </dd>
               </div>
             ))}
           </dl>
         </div>
 
         <div className="border-t border-accent/50 px-6 py-6 sm:px-8">
+
+          {/* Submit Custom Furniture Request */}
+          <div className="mb-5">
+            <SendRequest brief={brief} />
+          </div>
+
+          {/* Copy and Download Actions */}
           <div className="flex flex-wrap gap-3">
             <button
               type="button"
@@ -215,9 +242,17 @@ export default function BriefModal({ brief, onClose }) {
             </p>
           )}
 
+          {/* Updated Request Information */}
           <p className="mt-5 text-sm leading-6 text-secondary/65">
-            Preparing a brief doesn’t send a request or confirm a quote. Share it
-            with Furniva when ordering opens, or{" "}
+            Sending your brief creates a request we’ll review and answer with a
+            quote. You can follow it in{" "}
+            <Link
+              to="/my-custom-requests"
+              className="font-medium text-primary hover:underline"
+            >
+              my requests
+            </Link>
+            , or{" "}
             <Link
               to="/consultation"
               className="font-medium text-primary hover:underline"
