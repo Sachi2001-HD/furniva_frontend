@@ -182,7 +182,6 @@ export default function ConsultationPage() {
         return () => cancelAnimationFrame(id);
     }, []);
 
-    // Focus the heading when the step changes
     useEffect(() => {
         if (previousStep.current !== step) {
             previousStep.current = step;
@@ -198,7 +197,6 @@ export default function ConsultationPage() {
         setValues((previous) => ({ ...previous, [key]: event.target.value }));
     };
 
-    // Today's date in the visitor's own time zone
     const today = new Date(Date.now() - new Date().getTimezoneOffset() * 60000)
         .toISOString()
         .slice(0, 10);
@@ -473,6 +471,14 @@ export default function ConsultationPage() {
                                     >
                                         Browse the shop
                                     </Link>
+                                    {token && (
+                                        <Link
+                                            to="/my-consultations"
+                                            className="inline-flex h-11 items-center rounded-full border border-accent px-6 text-base font-medium text-primary transition hover:bg-accent/30 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
+                                        >
+                                            View my consultations
+                                        </Link>
+                                    )}
                                     <button
                                         type="button"
                                         onClick={startAgain}

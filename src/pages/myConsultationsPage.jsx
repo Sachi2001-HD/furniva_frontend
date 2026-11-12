@@ -1,16 +1,20 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { CalendarCheck, ChevronDown, ExternalLink, Phone, Plus, Video } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import {
+  CalendarCheck,
+  CalendarClock,
+  ChevronDown,
+  ExternalLink,
+  MapPin,
+  MessageCircle,
+  Plus,
+  Video,
+} from "lucide-react";
 import PageShell from "../components/pageShell";
 import Pill from "../components/ui/pill";
 import Toast from "../components/ui/toast";
-import ConsultationDrawer from "../components/consultations/consultationDrawer";
 import { useAuth } from "../context/authContext";
-import {
-  cancelConsultation,
-  createConsultation,
-  fetchMyConsultations,
-} from "../utils/consultationApi";
+import { cancelConsultation, fetchMyConsultations } from "../utils/consultationApi";
 import { formatLongDate, formatTime } from "../utils/format";
 
 const STATUS = {
@@ -20,6 +24,12 @@ const STATUS = {
   Cancelled: { label: "Cancelled", tone: "bad" },
 };
 
+const MODES = {
+  video: { label: "Video call", icon: Video },
+  "in-store": { label: "In-store visit", icon: MapPin },
+  undecided: { label: "Format to be agreed", icon: MessageCircle },
+};
+
 const TABS = [
   { value: "upcoming", label: "Upcoming", statuses: ["Pending", "Confirmed"] },
   { value: "past", label: "Completed", statuses: ["Completed"] },
@@ -27,8 +37,11 @@ const TABS = [
 ];
 
 const dayParts = (item) => {
-  const date = new Date(item.scheduledAt ?? item.preferredDate);
+  const source = item.scheduledAt ?? item.preferredDate;
+  if (!source) return null;
+
   const options = item.scheduledAt ? {} : { timeZone: "UTC" };
+  const date = new Date(source);
 
   return {
     day: date.toLocaleDateString("en-GB", { day: "numeric", ...options }),
@@ -36,43 +49,59 @@ const dayParts = (item) => {
   };
 };
 
+const whenText = (item) => {
+  if (item.scheduledAt) {
+    return `${formatLongDate(item.scheduledAt)} at ${formatTime(item.scheduledAt)}`;
+  }
+
+  const time = item.preferredTime && item.preferredTime !== "Any time" ? item.preferredTime : "";
+
+  if (item.preferredDate) {
+    return `${formatLongDate(item.preferredDate, true)}${time ? ` · ${time}` : ""}`;
+  }
+  return time ? `Date to be agreed · ${time}` : "Flexible on date and time";
+};
+
 function ConsultationCard({ item, busy, onCancel }) {
   const [open, setOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
 
   const info = STATUS[item.status];
-  const { day, month } = dayParts(item);
-  const ModeIcon = item.mode === "online" ? Video : Phone;
+  const mode = MODES[item.mode] ?? MODES.undecided;
+  const ModeIcon = mode.icon;
+  const parts = dayParts(item);
   const cancellable = ["Pending", "Confirmed"].includes(item.status);
-
-  const when = item.scheduledAt
-    ? `${formatLongDate(item.scheduledAt)} at ${formatTime(item.scheduledAt)}`
-    : `${formatLongDate(item.preferredDate, true)} · ${item.timeWindow}`;
 
   return (
     <li className="rounded-3xl border border-accent/50 bg-[#FDF8F1] p-5 shadow-[0_10px_30px_rgba(113,62,38,0.06)] sm:p-7">
       <div className="flex flex-wrap items-start gap-5">
         <div className="grid h-20 w-20 shrink-0 place-items-center rounded-2xl bg-primary text-background">
-          <div className="text-center">
-            <p className="font-display text-3xl leading-none">{day}</p>
-            <p className="mt-1 text-xs uppercase tracking-wider text-background/80">{month}</p>
-          </div>
+          {parts ? (
+            <div className="text-center">
+              <p className="font-display text-3xl leading-none">{parts.day}</p>
+              <p className="mt-1 text-xs uppercase tracking-wider text-background/80">{parts.month}</p>
+            </div>
+          ) : (
+            <CalendarClock size={30} aria-hidden="true" />
+          )}
         </div>
 
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-start justify-between gap-3">
-            <h2 className="font-display text-2xl leading-tight sm:text-3xl">{item.topic}</h2>
+            <h2 className="font-display text-2xl leading-tight sm:text-3xl">
+              {item.space} consultation
+            </h2>
             <Pill tone={info.tone}>{info.label}</Pill>
           </div>
 
-          <p className="mt-2 text-secondary/80">{when}</p>
+          <p className="mt-2 text-secondary/80">{whenText(item)}</p>
           {!item.scheduledAt && item.status === "Pending" && (
-            <p className="text-sm text-secondary/60">We’ll confirm the exact time with you.</p>
+            <p className="text-sm text-secondary/60">We’ll email you to confirm the time.</p>
           )}
 
-          <p className="mt-2 inline-flex items-center gap-2 text-sm text-secondary/70">
+          <p className="mt-2 inline-flex flex-wrap items-center gap-2 text-sm text-secondary/70">
             <ModeIcon size={16} aria-hidden="true" />
-            {item.mode === "online" ? "Online video call" : "Phone call"}
+            {mode.label}
             <span aria-hidden="true">·</span>
             {item.reference}
           </p>
@@ -107,13 +136,13 @@ function ConsultationCard({ item, busy, onCancel }) {
         <div className="mt-6 space-y-4 border-t border-accent/40 pt-6">
           <dl className="grid gap-x-8 gap-y-3 text-[15px] sm:grid-cols-2">
             <div>
-              <dt className="text-sm text-secondary/60">Phone</dt>
-              <dd>{item.phone}</dd>
+              <dt className="text-sm text-secondary/60">Email</dt>
+              <dd className="break-all">{item.email}</dd>
             </div>
-            {item.roomType && (
+            {item.phone && (
               <div>
-                <dt className="text-sm text-secondary/60">Room</dt>
-                <dd>{item.roomType}</dd>
+                <dt className="text-sm text-secondary/60">Phone</dt>
+                <dd>{item.phone}</dd>
               </div>
             )}
             {item.budget && (
@@ -183,15 +212,12 @@ function ConsultationCard({ item, busy, onCancel }) {
 
 export default function MyConsultationsPage() {
   const navigate = useNavigate();
-  const { token, user, logout } = useAuth();
+  const { token, logout } = useAuth();
 
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [tab, setTab] = useState("upcoming");
-  const [drawer, setDrawer] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [formError, setFormError] = useState("");
   const [busy, setBusy] = useState({});
   const [toast, setToast] = useState(null);
 
@@ -227,36 +253,16 @@ export default function MyConsultationsPage() {
     return () => clearTimeout(timer);
   }, [toast]);
 
-  const showToast = (type, text) => setToast({ type, text, id: Date.now() });
-
-  const book = async (payload) => {
-    setSaving(true);
-    setFormError("");
-
-    try {
-      await createConsultation(token, payload);
-      await load({ silent: true });
-      setTab("upcoming");
-      setDrawer(false);
-      showToast("success", "Consultation requested. We’ll confirm the time with you.");
-    } catch (failure) {
-      if (failure.status === 401) expireSession();
-      else setFormError(failure.message);
-    } finally {
-      setSaving(false);
-    }
-  };
-
   const cancel = async (item) => {
     setBusy((previous) => ({ ...previous, [item._id]: true }));
 
     try {
       await cancelConsultation(token, item._id);
       await load({ silent: true });
-      showToast("success", "Consultation cancelled");
+      setToast({ type: "success", text: "Consultation cancelled", id: Date.now() });
     } catch (failure) {
       if (failure.status === 401) expireSession();
-      else showToast("error", failure.message);
+      else setToast({ type: "error", text: failure.message, id: Date.now() });
     } finally {
       setBusy((previous) => {
         const next = { ...previous };
@@ -277,26 +283,23 @@ export default function MyConsultationsPage() {
     [items]
   );
 
+  // Soonest first for upcoming, newest first for the rest
   const visible = useMemo(() => {
     const statuses = TABS.find((item) => item.value === tab).statuses;
     const list = items.filter((item) => statuses.includes(item.status));
-    const key = (item) => new Date(item.scheduledAt ?? item.preferredDate);
+    const key = (item) => new Date(item.scheduledAt ?? item.preferredDate ?? item.createdAt);
 
     return [...list].sort((a, b) => (tab === "upcoming" ? key(a) - key(b) : key(b) - key(a)));
   }, [items, tab]);
 
   const bookButton = (
-    <button
-      type="button"
-      onClick={() => {
-        setFormError("");
-        setDrawer(true);
-      }}
+    <Link
+      to="/consultation#consultation-form"
       className="inline-flex h-12 items-center gap-2 rounded-full bg-primary px-6 text-base font-medium text-background shadow-[0_10px_24px_rgba(113,62,38,0.25)] transition hover:bg-secondary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary active:scale-[0.98]"
     >
       <Plus size={18} aria-hidden="true" />
       Book a consultation
-    </button>
+    </Link>
   );
 
   return (
@@ -379,7 +382,7 @@ export default function MyConsultationsPage() {
             </span>
             <p className="mt-6 font-display text-2xl">No consultations yet</p>
             <p className="mx-auto mt-2 max-w-sm text-secondary/70">
-              Book a video or phone call to plan your room, choose pieces, or start a custom design.
+              Book a video call or an in-store visit to plan your room and choose your pieces.
             </p>
             <div className="mt-8 flex justify-center">{bookButton}</div>
           </div>
@@ -400,16 +403,6 @@ export default function MyConsultationsPage() {
           </ul>
         )}
       </section>
-
-      {drawer && (
-        <ConsultationDrawer
-          defaultPhone={user?.contactNumber ?? ""}
-          saving={saving}
-          error={formError}
-          onClose={() => setDrawer(false)}
-          onSubmit={book}
-        />
-      )}
     </PageShell>
   );
 }

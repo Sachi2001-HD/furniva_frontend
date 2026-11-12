@@ -5,8 +5,5 @@ export async function fetchMyConsultations(token) {
   return data.consultations ?? [];
 }
 
-export const createConsultation = (token, body) =>
-  apiRequest("/consultation", { method: "POST", token, body });
-
 export const cancelConsultation = (token, id) =>
-  apiRequest(`/consultation/${id}/cancel`, { method: "PATCH", token });
+  apiRequest(`/consultations/${id}/cancel`, { method: "PATCH", token });
