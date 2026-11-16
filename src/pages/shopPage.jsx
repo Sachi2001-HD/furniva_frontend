@@ -26,8 +26,9 @@ import FilterPanel from "../components/shop/filterPanel";
 import CompareTray from "../components/shop/compareTray";
 
 import { useAuth } from "../context/authContext";
-import { useCart } from "../context/cartContext"; // CHANGED
+import { useCart } from "../context/cartContext";
 import { apiRequest } from "../utils/api";
+import { useWishlist } from "../context/wishlistContext";
 
 const MAX_PRICE = 10000000;
 
@@ -152,8 +153,8 @@ export default function ShopPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { isLoggedIn } = useAuth();
-  const { addItem } = useCart(); // CHANGED
-  const [searchParams, setSearchParams] = useSearchParams(); // CHANGED
+  const { addItem } = useCart();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const category = searchParams.get("category") || "all";
 
@@ -177,7 +178,7 @@ export default function ShopPage() {
   const [error, setError] = useState("");
 
   // Interaction states
-  const [saved, setSaved] = useState(() => new Set());
+  const { isSaved } = useWishlist();
   const [compare, setCompare] = useState([]);
   const [drawer, setDrawer] = useState(false);
   const [toast, setToast] = useState("");
@@ -185,7 +186,6 @@ export default function ShopPage() {
   const searchRef = useRef(null);
   const toastTimer = useRef(null);
 
-  // Fetch products and categories from the backend
   useEffect(() => {
     let isMounted = true;
 
@@ -196,7 +196,6 @@ export default function ShopPage() {
 
         const [productList, categoryResponse] = await Promise.all([
           fetchAllProducts(),
-          // If this fails, the tabs fall back to the categories found on the products
           apiRequest("/categories").catch(() => null),
         ]);
 
@@ -312,21 +311,6 @@ export default function ShopPage() {
     action();
   };
 
-  // Wishlist
-  const toggleSave = (product) => {
-    requireAuth(() => {
-      setSaved((prev) => {
-        const next = new Set(prev);
-
-        next.has(product.id)
-          ? next.delete(product.id)
-          : next.add(product.id);
-
-        return next;
-      });
-    });
-  };
-
   const handleAddToCart = (product) => {
     requireAuth(() => {
       const result = addItem(product);
@@ -397,7 +381,7 @@ export default function ShopPage() {
         !filters.inStock || product.inStock;
 
       const matchesSaved =
-        !filters.saved || saved.has(product.id);
+        !filters.saved || isSaved(product.id);
 
       const matchesWidth =
         !filters.maxWidth ||
@@ -454,7 +438,7 @@ export default function ShopPage() {
     return sorters[sort]
       ? [...list].sort(sorters[sort])
       : list;
-  }, [products, category, filters, query, sort, saved]);
+  }, [products, category, filters, query, sort, isSaved]);
 
   // Active filter chips
   const chips = [
@@ -503,7 +487,7 @@ export default function ShopPage() {
   return (
     <main className="min-h-screen bg-background bg-[repeating-linear-gradient(100deg,transparent_0_14px,rgba(113,62,38,0.045)_14px_15px)]">
 
-      {/* Announcement bar + navbar stay fixed together */}
+      {/* Announcement bar*/}
       <div className="pointer-events-none sticky top-0 z-50">
         <AnnouncementBar />
 
@@ -794,11 +778,9 @@ export default function ShopPage() {
                     product={product}
                     view={view}
                     showMeta
-                    saved={saved.has(product.id)}
                     comparing={compare.some(
                       (item) => item.id === product.id
                     )}
-                    onToggleWishlist={toggleSave}
                     onToggleCompare={toggleCompare}
                     onAddToCart={handleAddToCart}
                   />

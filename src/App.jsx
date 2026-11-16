@@ -29,6 +29,7 @@ import ForgotPasswordPage from "./pages/forgotPasswordPage";
 import ResetPasswordPage from "./pages/resetPasswordPage";
 import MyCustomRequestsPage from "./pages/myCustomRequestsPage";
 import MyConsultationsPage from "./pages/MyConsultationsPage";
+import WishlistPage from "./pages/wishlistPage";
 
 export default function App() {
   return (
@@ -108,6 +109,13 @@ export default function App() {
           element={
             <RequireAuth>
               <MyConsultationsPage />
+            </RequireAuth>} />
+
+        <Route
+          path="/wishlist"
+          element={
+            <RequireAuth>
+              <WishlistPage />
             </RequireAuth>} />
 
         {/* Admin-only routes */}

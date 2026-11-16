@@ -1,6 +1,8 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Heart, Plus, Star, ArrowUpRight } from "lucide-react";
+import { useCart } from "../context/cartContext";
+import { useWishlist } from "../context/wishlistContext";
 
 const formatPrice = (n) => `Rs. ${n.toLocaleString("en-US")}`;
 
@@ -37,6 +39,11 @@ export default function ProductCard({
   onAddToCart,
   onToggleWishlist,
 }) {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { addItem } = useCart();
+  const { isSaved, toggle } = useWishlist();
+
   const {
     name,
     description,
@@ -46,20 +53,36 @@ export default function ProductCard({
     reviewCount = 0,
   } = product;
 
-  // The API sends a list of images. Older sample data used a single image.
   const image = product.images?.[0] ?? product.image;
-
-  // Where the card links to: /shop/<product id>
   const to = product.href ?? `/shop/${product._id ?? product.id}`;
 
-  const [liked, setLiked] = useState(false);
+  const cartItem = product.source ?? product;
+  const soldOut = !(cartItem.stock > 0);
+
+  const liked = isSaved(product._id ?? product.id);
+  const [heartBusy, setHeartBusy] = useState(false);
 
   const onOffer = offerPrice != null && offerPrice < price;
   const discount = onOffer ? Math.round((1 - offerPrice / price) * 100) : 0;
 
-  const handleWishlist = () => {
-    setLiked(!liked);
-    onToggleWishlist?.(product, !liked);
+  const handleWishlist = async () => {
+    if (onToggleWishlist) {
+      onToggleWishlist(product, !liked);
+      return;
+    }
+
+    setHeartBusy(true);
+    const result = await toggle(cartItem);
+    setHeartBusy(false);
+
+    if (!result.ok && result.reason === "login") {
+      navigate("/login", { state: { from: location.pathname } });
+    }
+  };
+
+  const handleAdd = () => {
+    if (onAddToCart) onAddToCart(product);
+    else addItem(cartItem);
   };
 
   return (
@@ -71,7 +94,9 @@ export default function ProductCard({
             src={image}
             alt=""
             loading="lazy"
-            className="aspect-5/4 w-full object-cover transition duration-500 motion-safe:group-hover:scale-105"
+            className={`aspect-5/4 w-full object-cover transition duration-500 motion-safe:group-hover:scale-105 ${
+              soldOut ? "opacity-60" : ""
+            }`}
           />
         </Link>
 
@@ -81,14 +106,21 @@ export default function ProductCard({
           </span>
         )}
 
+        {soldOut && (
+          <span className="absolute bottom-3 left-3 rounded-full bg-secondary/85 px-3 py-1 text-xs font-medium text-background">
+            Out of stock
+          </span>
+        )}
+
         <button
           type="button"
           onClick={handleWishlist}
+          disabled={heartBusy}
           aria-pressed={liked}
           aria-label={
             liked ? `Remove ${name} from wishlist` : `Add ${name} to wishlist`
           }
-          className={`absolute right-3 top-3 grid h-10 w-10 place-items-center rounded-full bg-background/80 text-secondary shadow-sm backdrop-blur-md transition hover:bg-background ${focusRing}`}
+          className={`absolute right-3 top-3 grid h-10 w-10 place-items-center rounded-full bg-background/80 text-secondary shadow-sm backdrop-blur-md transition hover:bg-background disabled:opacity-70 ${focusRing}`}
         >
           <Heart
             size={19}
@@ -143,11 +175,12 @@ export default function ProductCard({
         <div className="mt-auto pt-4">
           <button
             type="button"
-            onClick={() => onAddToCart?.(product)}
-            className={`inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-primary text-[15px] font-medium text-background transition hover:bg-secondary motion-safe:active:scale-[0.98] ${focusRing}`}
+            onClick={handleAdd}
+            disabled={soldOut}
+            className={`inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-primary text-[15px] font-medium text-background transition hover:bg-secondary motion-safe:active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 ${focusRing}`}
           >
             <Plus size={18} />
-            Add to cart
+            {soldOut ? "Out of stock" : "Add to cart"}
           </button>
         </div>
       </div>
