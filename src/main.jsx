@@ -6,6 +6,7 @@ import App from "./App.jsx";
 import "./index.css";
 import { CartProvider } from "./context/cartContext.jsx";
 import { WishlistProvider } from "./context/wishlistContext.jsx";
+import { NotificationProvider } from "./context/notificationContext";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
@@ -13,7 +14,9 @@ createRoot(document.getElementById("root")).render(
       <AuthProvider>
         <CartProvider>
           <WishlistProvider>
-            <App />
+            <NotificationProvider>
+              <App />
+            </NotificationProvider>
           </WishlistProvider>
         </CartProvider>
       </AuthProvider>

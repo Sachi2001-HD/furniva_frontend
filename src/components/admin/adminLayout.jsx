@@ -14,7 +14,7 @@ import {
   Plus,
 } from "lucide-react";
 import { useAuth } from "../../context/authContext";
-import NotificationMenu from "./notificationMenu";
+import NotificationMenu from "../notificationMenu";
 import AccountMenu from "./accountMenu";
 
 const navItems = [
@@ -188,7 +188,7 @@ export default function AdminLayout({ title, subtitle, children }) {
               />
             </label>
 
-            <NotificationMenu />
+            <NotificationMenu viewAllPath="/admin/notifications" variant="outlined" />
 
             <Link
               to="/admin/products/new"

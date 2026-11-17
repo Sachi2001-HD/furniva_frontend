@@ -18,6 +18,8 @@ import {
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/authContext";
 import CartButton from "./cart/cartButton";
+import NotificationMenu from "./notificationMenu";
+import { useNotifications } from "../context/notificationContext";
 
 const links = [
   { label: "Home", path: "/" },
@@ -79,7 +81,9 @@ export default function CustomerNavbar({ cartCount = 0 }) {
 
   const navigate = useNavigate();
   const location = useLocation();
+
   const { user, logout } = useAuth();
+  const { unreadCount } = useNotifications();
 
   const initial = user?.firstName?.charAt(0).toUpperCase() || "U";
 
@@ -92,8 +96,18 @@ export default function CustomerNavbar({ cartCount = 0 }) {
 
   const isAdmin = user?.role === "admin";
 
+  const notificationPath = isAdmin
+    ? "/admin/notifications"
+    : "/notifications";
+
   const menuLinks = isAdmin
-    ? [{ label: "Admin Dashboard", path: "/admin", icon: LayoutDashboard }]
+    ? [
+        {
+          label: "Admin Dashboard",
+          path: "/admin",
+          icon: LayoutDashboard,
+        },
+      ]
     : accountLinks;
 
   const isActive = (path) =>
@@ -157,6 +171,7 @@ export default function CustomerNavbar({ cartCount = 0 }) {
 
         {/* Customer Actions */}
         <div className="flex items-center gap-1 justify-self-end">
+          {/* Search */}
           <button
             aria-label="Search products"
             onClick={() => go("/shop")}
@@ -165,14 +180,12 @@ export default function CustomerNavbar({ cartCount = 0 }) {
             <Search size={21} />
           </button>
 
-          <button
-            aria-label="Notifications"
-            onClick={() => go("/notifications")}
-            className={`${iconBtn} hidden sm:grid`}
-          >
-            <Bell size={21} />
-          </button>
+          {/* Role-based Notification Menu */}
+          <div className="hidden sm:block">
+            <NotificationMenu viewAllPath={notificationPath} />
+          </div>
 
+          {/* Wishlist */}
           <button
             aria-label="Wishlist"
             onClick={() => go("/wishlist")}
@@ -181,6 +194,7 @@ export default function CustomerNavbar({ cartCount = 0 }) {
             <Heart size={21} />
           </button>
 
+          {/* Cart */}
           <CartButton />
 
           <span className="mx-2 hidden h-6 w-px bg-accent sm:block" />
@@ -291,6 +305,7 @@ export default function CustomerNavbar({ cartCount = 0 }) {
           ))}
 
           <div className="mt-1 flex flex-col gap-1 border-t border-accent/40 pt-2 sm:hidden">
+            {/* Search */}
             <button
               onClick={() => go("/shop")}
               className="flex items-center gap-3 rounded-2xl px-4 py-3 text-left text-[16px] text-secondary/80"
@@ -299,14 +314,17 @@ export default function CustomerNavbar({ cartCount = 0 }) {
               Search Products
             </button>
 
+            {/* Role-based Notifications */}
             <button
-              onClick={() => go("/notifications")}
+              onClick={() => go(notificationPath)}
               className="flex items-center gap-3 rounded-2xl px-4 py-3 text-left text-[16px] text-secondary/80"
             >
               <Bell size={20} />
               Notifications
+              {unreadCount > 0 ? ` (${unreadCount})` : ""}
             </button>
 
+            {/* Wishlist */}
             <button
               onClick={() => go("/wishlist")}
               className="flex items-center gap-3 rounded-2xl px-4 py-3 text-left text-[16px] text-secondary/80"
@@ -315,6 +333,7 @@ export default function CustomerNavbar({ cartCount = 0 }) {
               Wishlist
             </button>
 
+            {/* Cart */}
             <button
               onClick={() => go("/cart")}
               className="flex items-center gap-3 rounded-2xl px-4 py-3 text-left text-[16px] text-secondary/80"
@@ -323,6 +342,7 @@ export default function CustomerNavbar({ cartCount = 0 }) {
               Cart ({cartCount})
             </button>
 
+            {/* Mobile Account Details */}
             <div className="mt-1 border-t border-accent/40 pt-2">
               <div className="mb-2 flex items-center gap-3 px-4 py-2">
                 <ProfileAvatar
@@ -342,6 +362,7 @@ export default function CustomerNavbar({ cartCount = 0 }) {
                 </div>
               </div>
 
+              {/* Role-based Account Links */}
               {menuLinks.map(({ label, path, icon: Icon }) => (
                 <button
                   key={label}
@@ -353,6 +374,7 @@ export default function CustomerNavbar({ cartCount = 0 }) {
                 </button>
               ))}
 
+              {/* Logout */}
               <button
                 onClick={handleLogout}
                 className="mt-1 flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-4 py-3 text-[16px] font-medium text-background"

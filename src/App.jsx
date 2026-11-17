@@ -16,6 +16,7 @@ import AdminSalesPage from "./pages/adminSalesPage";
 import AdminProductsPage from "./pages/adminProductsPage";
 import AdminOrdersPage from "./pages/adminOrdersPage";
 import AdminRequestsPage from "./pages/adminRequestsPage";
+import AdminNotificationsPage from "./pages/adminNotificationsPage";
 
 import CartDrawer from "./components/cart/cartDrawer";
 import CheckoutPage from "./pages/checkoutPage";
@@ -30,6 +31,7 @@ import ResetPasswordPage from "./pages/resetPasswordPage";
 import MyCustomRequestsPage from "./pages/myCustomRequestsPage";
 import MyConsultationsPage from "./pages/MyConsultationsPage";
 import WishlistPage from "./pages/wishlistPage";
+import NotificationsPage from "./pages/adminNotificationsPage";
 
 export default function App() {
   return (
@@ -118,6 +120,14 @@ export default function App() {
               <WishlistPage />
             </RequireAuth>} />
 
+        <Route
+          path="/notifications"
+          element={
+            <RequireAuth>
+              <NotificationsPage />
+            </RequireAuth> }/>
+
+
         {/* Admin-only routes */}
         <Route element={<AdminRoute />}>
           <Route path="/admin" element={<AdminDashboardPage />} />
@@ -125,6 +135,7 @@ export default function App() {
           <Route path="/admin/products/*" element={<AdminProductsPage />} />
           <Route path="/admin/orders" element={<AdminOrdersPage />} />
           <Route path="/admin/requests" element={<AdminRequestsPage />} />
+          <Route path="/admin/notifications" element={<AdminNotificationsPage />} />
         </Route>
       </Routes>
     </>
