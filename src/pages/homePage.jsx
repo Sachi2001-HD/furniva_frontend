@@ -8,6 +8,7 @@ import PlanYourSpace from "../components/planYourSpace";
 import Footer from "../components/footer";
 import { useFetchData } from "../hooks/useFetchData";
 import { optimizeImage } from "../utils/cloudinary";
+import ReviewsSection from "../components/reviewsSection";
 
 const FEATURED_COUNT = 3;
 
@@ -49,6 +50,7 @@ export default function HomePage() {
       <NewArrivals />
       <WhyChooseFurniva />
       <PlanYourSpace />
+      <ReviewsSection/>
       <Footer />
     </main>
   );
