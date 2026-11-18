@@ -30,7 +30,6 @@ const API_URL = import.meta.env.VITE_API_URL;
 
 const ORDER_STATUSES = [
   "pending",
-  "confirmed",
   "processing",
   "shipped",
   "delivered",
@@ -40,7 +39,6 @@ const ORDER_STATUSES = [
 const FILTERS = [
   "All Orders",
   "Pending",
-  "Confirmed",
   "Processing",
   "Shipped",
   "Delivered",
@@ -213,12 +211,11 @@ function DetailRow({ icon: Icon, label, value }) {
 
 function OrderTimeline({ status, createdAt, updatedAt }) {
   const steps = [
-    "pending",
-    "confirmed",
-    "processing",
-    "shipped",
-    "delivered",
-  ];
+  "pending",
+  "processing",
+  "shipped",
+  "delivered",
+];
 
   const currentIndex = steps.indexOf(status);
   const isCancelled = status === "cancelled";
@@ -663,7 +660,7 @@ export default function AdminOrdersPage() {
     ).length;
 
     const processing = orders.filter((order) =>
-      ["confirmed", "processing", "shipped"].includes(getOrderStatus(order))
+      ["processing", "shipped"].includes(getOrderStatus(order))
     ).length;
 
     const delivered = orders.filter(
@@ -727,6 +724,7 @@ export default function AdminOrdersPage() {
     setPage(1);
   }, [activeFilter, search, sortBy]);
 
+
   const handleStatusChange = async (orderId, newStatus) => {
     if (!ORDER_STATUSES.includes(newStatus)) return;
 
@@ -736,19 +734,23 @@ export default function AdminOrdersPage() {
       const response = await fetch(
         `${API_URL}/orders/${orderId}/status`,
         {
-          method: "PUT",
+          method: "PATCH",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ orderStatus: newStatus }),
+          body: JSON.stringify({
+            status: capitalize(newStatus),
+          }),
         }
       );
 
       const result = await response.json().catch(() => ({}));
 
       if (!response.ok) {
-        throw new Error(result.message || "Unable to update order status.");
+        throw new Error(
+          result.message || "Unable to update order status."
+        );
       }
 
       const updatedOrder = result.order || result.data || result;
@@ -757,11 +759,9 @@ export default function AdminOrdersPage() {
         previous.map((order) =>
           order._id === orderId
             ? {
-                ...order,
-                ...updatedOrder,
-                orderStatus:
-                  updatedOrder.orderStatus || newStatus,
-              }
+              ...order,
+              ...updatedOrder,
+            }
             : order
         )
       );
@@ -769,10 +769,9 @@ export default function AdminOrdersPage() {
       setSelectedOrder((previous) =>
         previous?._id === orderId
           ? {
-              ...previous,
-              ...updatedOrder,
-              orderStatus: updatedOrder.orderStatus || newStatus,
-            }
+            ...previous,
+            ...updatedOrder,
+          }
           : previous
       );
     } catch (err) {

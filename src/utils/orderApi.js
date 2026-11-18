@@ -70,7 +70,7 @@ export async function fetchOrder(token, id) {
   return normaliseOrder(data.order ?? data);
 }
 
-// Timeline shown on the order page
+// Timeline
 export const STEPS = [
   { key: "placed", label: "Order placed" },
   { key: "confirmed", label: "Confirmed" },
@@ -78,7 +78,6 @@ export const STEPS = [
   { key: "delivered", label: "Delivered" },
 ];
 
-// step: index in STEPS, or -1 when cancelled
 export function statusInfo(status = "") {
   const key = String(status).toLowerCase().replace(/[\s_-]/g, "");
 

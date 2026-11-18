@@ -31,7 +31,7 @@ import ResetPasswordPage from "./pages/resetPasswordPage";
 import MyCustomRequestsPage from "./pages/myCustomRequestsPage";
 import MyConsultationsPage from "./pages/MyConsultationsPage";
 import WishlistPage from "./pages/wishlistPage";
-import NotificationsPage from "./pages/adminNotificationsPage";
+import NotificationsPage from "./pages/notificationsPage";
 
 export default function App() {
   return (

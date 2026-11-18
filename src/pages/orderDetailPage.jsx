@@ -7,6 +7,7 @@ import { Thumb } from "../components/cart/cartParts";
 import { useAuth } from "../context/authContext";
 import { STEPS, fetchOrder, statusInfo } from "../utils/orderApi";
 import { formatDate, formatMoney } from "../utils/format";
+import OrderProductReview from "../components/orderProductReview";
 
 const paymentLabel = (value = "") => {
   const labels = { cod: "Cash on delivery", bank_transfer: "Bank transfer" };
@@ -214,23 +215,36 @@ export default function OrderDetailPage() {
       <div className="mt-8 grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_380px]">
         <Panel title="Items">
           <ul className="divide-y divide-accent/40">
-            {order.items.map((item, index) => (
-              <li
-                key={`${item.id}-${index}`}
-                className="flex items-center gap-4 py-4 first:pt-0 last:pb-0"
-              >
-                <Thumb src={item.image} className="h-20 w-20" />
-                <div className="min-w-0 flex-1">
-                  <p className="font-medium">{item.name}</p>
-                  <p className="mt-0.5 text-sm text-secondary/65">
-                    {item.quantity} × {formatMoney(item.price)}
-                  </p>
-                </div>
-                <p className="shrink-0 font-medium">
-                  {formatMoney(item.price * item.quantity)}
-                </p>
-              </li>
-            ))}
+              {
+                order.items.map((item, index) => (
+                  <li
+                    key={`${item.id}-${index}`}
+                    className="py-4 first:pt-0 last:pb-0"
+                  >
+                    <div className="flex items-center gap-4">
+                      <Thumb src={item.image} className="h-20 w-20" />
+
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium">{item.name}</p>
+                        <p className="mt-0.5 text-sm text-secondary/65">
+                          {item.quantity} × {formatMoney(item.price)}
+                        </p>
+                      </div>
+
+                      <p className="shrink-0 font-medium">
+                        {formatMoney(item.price * item.quantity)}
+                      </p>
+                    </div>
+
+                    {order.status === "Delivered" && (
+                      <OrderProductReview
+                        productId={item.id}
+                        token={token}
+                      />
+                    )}
+                  </li>
+                ))
+              }
           </ul>
         </Panel>
 
