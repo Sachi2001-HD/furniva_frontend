@@ -17,6 +17,8 @@ import AdminProductsPage from "./pages/adminProductsPage";
 import AdminOrdersPage from "./pages/adminOrdersPage";
 import AdminRequestsPage from "./pages/adminRequestsPage";
 import AdminNotificationsPage from "./pages/adminNotificationsPage";
+import AdminReviewsPage from "./pages/adminReviewsPage";
+import AdminSettingsPage from "./pages/adminSettingsPage";
 
 import CartDrawer from "./components/cart/cartDrawer";
 import CheckoutPage from "./pages/checkoutPage";
@@ -136,6 +138,8 @@ export default function App() {
           <Route path="/admin/orders" element={<AdminOrdersPage />} />
           <Route path="/admin/requests" element={<AdminRequestsPage />} />
           <Route path="/admin/notifications" element={<AdminNotificationsPage />} />
+          <Route path="/admin/reviews" element={<AdminReviewsPage />} />
+          <Route path="/admin/settings" element={<AdminSettingsPage />} />
         </Route>
       </Routes>
     </>

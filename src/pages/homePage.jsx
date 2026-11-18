@@ -48,8 +48,8 @@ export default function HomePage() {
         onRetry={reload}
       />
       <NewArrivals />
-      <WhyChooseFurniva />
       <PlanYourSpace />
+      <WhyChooseFurniva />
       <ReviewsSection/>
       <Footer />
     </main>

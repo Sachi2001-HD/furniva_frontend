@@ -822,7 +822,7 @@ export default function AdminOrdersPage() {
         </div>
 
         {/* Overview cards */}
-        <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <MetricCard
             title="Total orders"
             value={metrics.total}
@@ -853,14 +853,6 @@ export default function AdminOrdersPage() {
             icon={PackageCheck}
             note="Successfully completed"
             iconBg="bg-emerald-100 text-emerald-700"
-          />
-
-          <MetricCard
-            title="Paid revenue"
-            value={formatCurrency(metrics.revenue)}
-            icon={Banknote}
-            note="Orders marked as paid"
-            iconBg="bg-purple-100 text-purple-700"
           />
         </section>
 
