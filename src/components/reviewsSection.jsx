@@ -40,7 +40,7 @@ function Skeleton() {
       </p>
       <ul
         aria-hidden="true"
-        className="mt-12 grid gap-x-12 gap-y-14 md:grid-cols-3"
+        className="mt-10 grid gap-x-12 gap-y-14 md:grid-cols-3"
       >
         {[0, 1, 2].map((i) => (
           <li key={i} className="border-t border-highlight/60 pt-10">
@@ -86,7 +86,7 @@ export default function ReviewsSection({ limit = 3 }) {
   return (
     <section
       aria-labelledby="stories-heading"
-      className="px-4 py-20 sm:px-8 sm:py-28"
+      className="px-4 py-10 sm:px-8 sm:py-14"
     >
       <div className="mx-auto max-w-[1680px]">
         <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-4">
@@ -96,14 +96,14 @@ export default function ReviewsSection({ limit = 3 }) {
             </p>
             <h2
               id="stories-heading"
-              className="mt-4 font-display text-4xl tracking-tight sm:text-6xl"
+              className="mt-4 font-display text-3xl tracking-tight sm:text-6xl"
             >
               Stories from home
             </h2>
           </div>
 
           {summary && summary.count > 0 && (
-            <p className="pb-2 text-sm text-primary">
+            <p className="pb-2 text-md text-primary">
               <span className="font-semibold">{summary.average.toFixed(1)}</span>{" "}
               average from {summary.count}{" "}
               {summary.count === 1 ? "review" : "reviews"}
@@ -124,7 +124,7 @@ export default function ReviewsSection({ limit = 3 }) {
                 <figure>
                   <Stars rating={review.rating} />
 
-                  <blockquote className="mt-8 line-clamp-6 font-display text-2xl leading-snug sm:text-[28px]">
+                  <blockquote className="mt-4 line-clamp-4 font-display text-xl leading-snug sm:text-[24px]">
                     “{review.comment}”
                   </blockquote>
 

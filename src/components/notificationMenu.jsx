@@ -9,7 +9,7 @@ import {
   timeAgo,
 } from "../utils/notifications";
 
-const RECENT = 6;
+const RECENT = 3;
 
 const buttonStyles = {
   plain: "h-11 w-11 text-secondary hover:bg-accent/30",
