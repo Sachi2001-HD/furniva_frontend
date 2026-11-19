@@ -1,5 +1,5 @@
 import Navbar from "../components/navbar";
-import Footer from "../components/footer";
+import SmallFooter from "../components/smallFooter";
 import CustomHero from "../components/custom/customHero";
 import CustomProcess from "../components/custom/customProcess";
 import DesignStudio from "../components/custom/designStudio";
@@ -16,7 +16,7 @@ export default function CustomFurniturePage() {
       <CustomHero />
       <CustomProcess />
       <DesignStudio />
-      <Footer />
+      <SmallFooter />
     </main>
   );
 }

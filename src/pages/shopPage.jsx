@@ -19,7 +19,7 @@ import {
 
 import AnnouncementBar from "../components/announcementBar";
 import Navbar from "../components/navbar";
-import Footer from "../components/footer";
+import SmallFooter from "../components/smallFooter";
 import ProductCard from "../components/productCard";
 import ShopHero from "../components/shop/shopHero";
 import FilterPanel from "../components/shop/filterPanel";
@@ -792,7 +792,7 @@ export default function ShopPage() {
         </div>
       </div>
 
-      <Footer />
+      <SmallFooter />
 
       {/* Mobile filter sheet */}
       {drawer && (

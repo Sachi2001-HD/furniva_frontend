@@ -15,6 +15,7 @@ import {
 import Navbar from "../components/navbar";
 import heroImg from "../assets/images/consultimg.jpg";
 import { useAuth } from "../context/authContext";
+import SmallFooter from "../components/smallFooter";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -805,16 +806,7 @@ export default function ConsultationPage() {
                 </div>
             </section>
 
-            {/* 4. Closing quote */}
-            <section className="bg-primary px-4 py-20 text-center text-background sm:px-8 sm:py-24">
-                <span
-                    aria-hidden="true"
-                    className="mx-auto mb-8 block h-px w-16 bg-highlight"
-                />
-                <blockquote className="mx-auto max-w-3xl font-display text-3xl italic leading-snug sm:text-5xl">
-                    “A home should feel like you, not like everyone else.”
-                </blockquote>
-            </section>
+            <SmallFooter />
         </main>
     );
 }
