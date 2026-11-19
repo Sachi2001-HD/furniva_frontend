@@ -13,8 +13,6 @@ import { WOODS } from "./options";
 
 const MAIN_IMAGE =
   "https://res.cloudinary.com/nogj197t/image/upload/v1793976215/ngocnghia1810-living-room-8480223_1920.jpg";
-const INSET_IMAGE =
-  "https://res.cloudinary.com/nogj197t/image/upload/v1793965884/images_8.jpg";
 
 const FACTS = [
   { icon: Ruler, label: "Made to your size" },
@@ -97,7 +95,7 @@ function SwatchTile({ onClick }) {
       href="#design-studio"
       onClick={onClick}
       aria-label="Choose your timber in the design studio"
-      className={`${tile} ${focus} flex flex-col justify-between border border-accent/60 bg-[#FDF8F1] p-4 shadow-[0_12px_30px_rgba(113,62,38,0.1)] transition duration-300 hover:shadow-[0_18px_44px_rgba(113,62,38,0.18)] sm:p-5`}
+      className={`${tile} ${focus} flex flex-col justify-between border border-accent/80 bg-primary/10 p-4 shadow-[0_12px_30px_rgba(113,62,38,0.1)] transition duration-300 hover:shadow-[0_18px_44px_rgba(113,62,38,0.18)] sm:p-5`}
     >
       <div className="flex items-start justify-between gap-2">
         <span className="text-[11px] font-medium uppercase tracking-[0.18em] text-secondary/60 sm:text-xs">
@@ -203,33 +201,6 @@ function SizeTile({ onClick }) {
   );
 }
 
-function DesignTile() {
-  return (
-    <div
-      className={`${tile} flex flex-col justify-between border border-accent/60 bg-[#FDF8F1] p-4 shadow-[0_12px_30px_rgba(113,62,38,0.1)] sm:p-5`}
-    >
-      <div className="flex items-start justify-between gap-2">
-        <span className="text-[11px] font-medium uppercase tracking-[0.18em] text-secondary/60 sm:text-xs">
-          Your vision
-        </span>
-
-        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary text-background">
-          <Sparkles size={16} />
-        </span>
-      </div>
-
-      <div>
-        <p className="font-display text-xl leading-snug text-secondary sm:text-2xl">
-          Made for your space.
-        </p>
-        <p className="mt-2 text-sm leading-6 text-secondary/75">
-          Your style, your dimensions, your very own furniture.
-        </p>
-      </div>
-    </div>
-  );
-}
-
 function Reveal({ ready, delay = 0, className = "", children }) {
   return (
     <div
@@ -275,7 +246,7 @@ export default function CustomHero() {
   return (
     <section
       aria-labelledby="custom-hero-heading"
-      className="px-4 pb-14 pt-3 sm:px-8 sm:pt-5 lg:pb-20"
+      className="px-4 pt-3 sm:px-8 sm:pt-5"
     >
       <div className="mx-auto grid max-w-[1680px] items-start gap-9 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-12 xl:gap-16">
 
@@ -297,7 +268,7 @@ export default function CustomHero() {
             <span className="block italic text-highlight">in wood.</span>
           </h1>
 
-          <p className="mt-7 max-w-xl text-lg leading-8 text-secondary/75 sm:text-xl sm:leading-9">
+          <p className="mt-7 max-w-xl text-md leading-6 text-secondary/75 sm:text-lg sm:leading-7">
             A different size. A favourite timber. A piece that fits your room
             exactly. Design it with us, and our makers bring it to life.
           </p>
@@ -323,19 +294,6 @@ export default function CustomHero() {
               Talk to a designer
             </Link>
           </div>
-
-          <ul className="mt-10 flex flex-wrap gap-x-8 gap-y-3 text-secondary/75">
-            {FACTS.map(({ icon: Icon, label }) => (
-              <li key={label} className="inline-flex items-center gap-2.5">
-                <Icon
-                  size={18}
-                  aria-hidden="true"
-                  className="text-[#445444]"
-                />
-                {label}
-              </li>
-            ))}
-          </ul>
         </div>
 
         {/* IMAGE SECTION */}
@@ -383,26 +341,12 @@ export default function CustomHero() {
               <SizeTile onClick={goToStudio} />
             </Reveal>
 
-            {/* SECOND IMAGE */}
-            <Reveal
-              ready={ready}
-              delay={420}
-              className="order-4 col-span-1 aspect-square sm:order-0 sm:col-span-1 sm:aspect-auto"
-            >
-              <div
-                className={`${tile} bg-[#D9BE9B] shadow-[0_20px_50px_rgba(113,62,38,0.18)]`}
-              >
-                <Photo src={INSET_IMAGE} icon={Armchair} />
-              </div>
-            </Reveal>
-
             {/* NEW CONTENT TILE */}
             <Reveal
               ready={ready}
               delay={520}
               className="order-5 min-h-36 sm:order-0 sm:min-h-0"
             >
-              <DesignTile />
             </Reveal>
           </div>
         </div>
