@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/authContext";
+import SmallFooter from "../components/smallFooter";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_URL || "http://localhost:5000";
@@ -165,6 +166,7 @@ function QuickLink({ to, icon: Icon, title, description }) {
         <p className="text-sm font-semibold text-[#38251a]">
           {title}
         </p>
+
         <p className="mt-1 text-xs text-[#927d6c]">
           {description}
         </p>
@@ -373,7 +375,6 @@ export default function MyProfilePage() {
     setUploading(true);
 
     try {
-      // Step 1: Upload image to the backend.
       const formData = new FormData();
       formData.append("image", file);
 
@@ -505,7 +506,7 @@ export default function MyProfilePage() {
 
   if (loading) {
     return (
-      <main className="grid min-h-[70vh] place-items-center bg-[#faf7f2]">
+      <main className="grid min-h-screen w-full place-items-center bg-[#faf7f2]">
         <div className="flex flex-col items-center gap-4 text-primary">
           <LoaderCircle size={34} className="animate-spin" />
           <p className="text-sm font-medium">
@@ -517,8 +518,10 @@ export default function MyProfilePage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#faf7f2] px-4 pb-16 pt-5 sm:px-6 lg:px-10">
-      <div className="mx-auto max-w-360">
+    <main className="flex min-h-screen w-full flex-col bg-[#faf7f2]">
+
+      {/* Main page content */}
+      <div className="mx-auto flex w-full max-w-360 flex-1 flex-col px-4 pb-8 pt-5 sm:px-6 lg:px-10">
 
         {/* Top navigation */}
         <header className="mb-8 flex items-center justify-between gap-4">
@@ -574,6 +577,7 @@ export default function MyProfilePage() {
 
           <div className="relative">
             <div className="flex flex-col justify-between gap-8 lg:flex-row lg:items-center">
+
               <div className="flex flex-col items-center gap-6 text-center sm:flex-row sm:text-left">
 
                 {/* Profile picture */}
@@ -672,6 +676,7 @@ export default function MyProfilePage() {
 
             {/* Account overview */}
             <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-3">
+
               <div className="rounded-[22px] border border-white/6 bg-white/9 p-5 backdrop-blur-sm">
                 <div className="mb-5 grid h-10 w-10 place-items-center rounded-xl bg-[#ead3b9]/10 text-[#d9c1a9]">
                   <ShoppingBag size={21} />
@@ -718,118 +723,152 @@ export default function MyProfilePage() {
         </section>
 
         {/* Main content */}
-        <div className="mt-8 grid grid-cols-1 items-start gap-7 xl:grid-cols-[minmax(0,1.15fr)_minmax(360px,0.85fr)]">
+        <div className="mt-8 grid flex-1 grid-cols-1 items-start gap-7 xl:grid-cols-[minmax(0,1.15fr)_minmax(360px,0.85fr)]">
 
-          {/* Personal information */}
-          <section className="rounded-[26px] border border-[#e9d9c9] bg-[#fffdfa] p-6 shadow-[0_8px_30px_rgba(74,47,29,0.035)] sm:p-8">
-            <SectionHeading
-              eyebrow="Your information"
-              title="Personal details"
-              description="Manage the information connected to your Furniva account."
-            />
+          {/* LEFT COLUMN */}
+          <div className="space-y-7">
 
-            <form onSubmit={handleSave} className="space-y-6">
+            {/* Personal information */}
+            <section className="rounded-[26px] border border-[#e9d9c9] bg-[#fffdfa] p-6 shadow-[0_8px_30px_rgba(74,47,29,0.035)] sm:p-8">
+              <SectionHeading
+                eyebrow="Your information"
+                title="Personal details"
+                description="Manage the information connected to your Furniva account."
+              />
 
-              <div className="flex flex-col gap-4 rounded-2xl bg-[#f8f1e9] p-4 sm:flex-row sm:items-center">
-                <ProfileAvatar
-                  image={form.image}
-                  name={fullName}
-                  size="medium"
-                />
+              <form onSubmit={handleSave} className="space-y-6">
 
-                <div className="flex-1">
-                  <p className="font-semibold text-[#39251a]">
-                    {fullName}
-                  </p>
+                <div className="flex flex-col gap-4 rounded-2xl bg-[#f8f1e9] p-4 sm:flex-row sm:items-center">
+                  <ProfileAvatar
+                    image={form.image}
+                    name={fullName}
+                    size="medium"
+                  />
 
-                  <p className="mt-1 text-xs text-[#927d6c]">
-                    JPG, PNG or WebP · Maximum 5 MB
-                  </p>
+                  <div className="flex-1">
+                    <p className="font-semibold text-[#39251a]">
+                      {fullName}
+                    </p>
+
+                    <p className="mt-1 text-xs text-[#927d6c]">
+                      JPG, PNG or WebP · Maximum 5 MB
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      fileInputRef.current?.click()
+                    }
+                    disabled={uploading}
+                    className="inline-flex items-center justify-center gap-2 rounded-full border border-[#d8c3b0] bg-white px-4 py-2.5 text-xs font-semibold text-primary transition hover:bg-[#f5e9dc] disabled:opacity-50"
+                  >
+                    <Pencil size={14} />
+                    Change photo
+                  </button>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() =>
-                    fileInputRef.current?.click()
-                  }
-                  disabled={uploading}
-                  className="inline-flex items-center justify-center gap-2 rounded-full border border-[#d8c3b0] bg-white px-4 py-2.5 text-xs font-semibold text-primary transition hover:bg-[#f5e9dc] disabled:opacity-50"
-                >
-                  <Pencil size={14} />
-                  Change photo
-                </button>
-              </div>
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                  <FormField
+                    label="First name"
+                    name="firstName"
+                    value={form.firstName}
+                    onChange={handleChange}
+                    placeholder="Enter your first name"
+                  />
 
-              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                  <FormField
+                    label="Last name"
+                    name="lastName"
+                    value={form.lastName}
+                    onChange={handleChange}
+                    placeholder="Enter your last name"
+                  />
+                </div>
+
                 <FormField
-                  label="First name"
-                  name="firstName"
-                  value={form.firstName}
-                  onChange={handleChange}
-                  placeholder="Enter your first name"
+                  label="Email address"
+                  name="email"
+                  value={user?.email}
+                  icon={Mail}
+                  readOnly
                 />
 
                 <FormField
-                  label="Last name"
-                  name="lastName"
-                  value={form.lastName}
+                  label="Contact number"
+                  name="contactNumber"
+                  value={form.contactNumber}
                   onChange={handleChange}
-                  placeholder="Enter your last name"
+                  placeholder="Enter your phone number"
+                  icon={Phone}
+                  type="tel"
                 />
-              </div>
 
-              <FormField
-                label="Email address"
-                name="email"
-                value={user?.email}
-                icon={Mail}
-                readOnly
-              />
+                <div className="flex flex-col-reverse gap-3 border-t border-[#eee3d8] pt-6 sm:flex-row sm:items-center sm:justify-between">
+                  <button
+                    type="button"
+                    onClick={handleReset}
+                    className="rounded-full px-5 py-3 text-sm font-semibold text-[#806c5e] transition hover:bg-[#f5eee7]"
+                  >
+                    Reset changes
+                  </button>
 
-              <FormField
-                label="Contact number"
-                name="contactNumber"
-                value={form.contactNumber}
-                onChange={handleChange}
-                placeholder="Enter your phone number"
-                icon={Phone}
-                type="tel"
-              />
+                  <button
+                    type="submit"
+                    disabled={saving || uploading}
+                    className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-7 py-3.5 text-sm font-semibold text-white shadow-md shadow-primary/15 transition hover:bg-[#512b1b] disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {saving ? (
+                      <>
+                        <LoaderCircle
+                          size={17}
+                          className="animate-spin"
+                        />
+                        Saving changes...
+                      </>
+                    ) : (
+                      <>
+                        <Check size={18} />
+                        Save changes
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </section>
 
-              <div className="flex flex-col-reverse gap-3 border-t border-[#eee3d8] pt-6 sm:flex-row sm:items-center sm:justify-between">
+            {/* Your account, your space */}
+            <section className="relative overflow-hidden rounded-[26px] bg-secondary p-7 text-white">
+              <div className="absolute -right-10 -top-10 h-36 w-36 rounded-full border-20 border-white/4" />
+
+              <div className="relative">
+                <div className="mb-5 grid h-12 w-12 place-items-center rounded-2xl bg-white/10 text-[#e8cdb2]">
+                  <LockKeyhole size={22} />
+                </div>
+
+                <h3 className="font-display text-2xl font-semibold">
+                  Your account, your space.
+                </h3>
+
+                <p className="mt-3 max-w-sm text-sm leading-6 text-[#d0bca9]">
+                  Your Furniva account keeps your personal details,
+                  saved furniture and purchases together, making
+                  every visit easier.
+                </p>
+
                 <button
                   type="button"
-                  onClick={handleReset}
-                  className="rounded-full px-5 py-3 text-sm font-semibold text-[#806c5e] transition hover:bg-[#f5eee7]"
+                  onClick={handleLogout}
+                  className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#ead3b9] px-5 py-3 text-sm font-semibold text-[#39251a] transition hover:bg-white"
                 >
-                  Reset changes
-                </button>
-
-                <button
-                  type="submit"
-                  disabled={saving || uploading}
-                  className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-7 py-3.5 text-sm font-semibold text-white shadow-md shadow-primary/15 transition hover:bg-[#512b1b] disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {saving ? (
-                    <>
-                      <LoaderCircle
-                        size={17}
-                        className="animate-spin"
-                      />
-                      Saving changes...
-                    </>
-                  ) : (
-                    <>
-                      <Check size={18} />
-                      Save changes
-                    </>
-                  )}
+                  <LogOut size={16} />
+                  Sign out of your account
                 </button>
               </div>
-            </form>
-          </section>
+            </section>
+          </div>
 
-          {/* Right column */}
+          {/* RIGHT COLUMN */}
           <div className="space-y-7">
 
             {/* Saved pieces */}
@@ -926,52 +965,12 @@ export default function MyProfilePage() {
                 )}
               </div>
             </section>
-
-            {/* Security card */}
-            <section className="relative overflow-hidden rounded-[26px] bg-secondary p-7 text-white">
-              <div className="absolute -right-10 -top-10 h-36 w-36 rounded-full border-20 border-white/4" />
-
-              <div className="relative">
-                <div className="mb-5 grid h-12 w-12 place-items-center rounded-2xl bg-white/10 text-[#e8cdb2]">
-                  <LockKeyhole size={22} />
-                </div>
-
-                <h3 className="font-display text-2xl font-semibold">
-                  Your account, your space.
-                </h3>
-
-                <p className="mt-3 max-w-sm text-sm leading-6 text-[#d0bca9]">
-                  Your Furniva account keeps your personal details,
-                  saved furniture and purchases together, making
-                  every visit easier.
-                </p>
-
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#ead3b9] px-5 py-3 text-sm font-semibold text-[#39251a] transition hover:bg-white"
-                >
-                  <LogOut size={16} />
-                  Sign out of your account
-                </button>
-              </div>
-            </section>
           </div>
         </div>
+      </div>
 
-        <footer className="mt-12 flex flex-col items-center justify-between gap-3 border-t border-[#e9d9c9] py-6 text-xs text-[#9b8878] sm:flex-row">
-          <p>
-            © {new Date().getFullYear()} Furniva. Furniture for Every Space.
-          </p>
-
-          <Link
-            to="/shop"
-            className="inline-flex items-center gap-2 font-semibold text-primary hover:underline"
-          >
-            Discover your next favourite piece
-            <ArrowRight size={14} />
-          </Link>
-        </footer>
+      <div className="mt-auto w-full shrink-0">
+        <SmallFooter />
       </div>
     </main>
   );
