@@ -12,12 +12,12 @@ import {
   Plus,
   Ruler,
   Share2,
-  ShoppingBag,
+  ShoppingCart,
   Star,
   X,
 } from "lucide-react";
 import Navbar from "../components/navbar";
-import Footer from "../components/footer";
+import SmallFooter from "../components/smallFooter";
 import { useAuth } from "../context/authContext";
 import { apiRequest } from "../utils/api";
 import { addToCart } from "../utils/cart";
@@ -161,8 +161,6 @@ function Message({ title, text, children }) {
   );
 }
 
-/* ---------- Page ---------- */
-
 export default function ProductDetailsPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -299,6 +297,14 @@ export default function ProductDetailsPage() {
 
     addToCart(product._id, qty, maxQty);
     setToast(`${qty} × ${product.name} added to your cart`);
+  };
+
+  // Add product to cart and navigate to checkout
+  const handleOrderNow = (maxQty) => {
+    if (!requireLogin()) return;
+
+    addToCart(product._id, qty, maxQty);
+    navigate("/checkout");
   };
 
   const handleLike = () => {
@@ -592,16 +598,31 @@ export default function ProductDetailsPage() {
                 </button>
               </div>
 
-              <button
-                type="button"
-                onClick={() => handleAdd(maxQty)}
-                disabled={soldOut}
-                className={`inline-flex h-14 min-w-200px flex-1 items-center justify-center gap-3 rounded-full bg-primary px-8 text-lg font-medium text-background shadow-[0_10px_24px_rgba(113,62,38,0.25)] transition hover:bg-secondary active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 ${focusRing}`}
-              >
-                <ShoppingBag size={20} aria-hidden="true" />
-                {soldOut ? "Out of stock" : "Add to cart"}
-              </button>
+              <div className="flex min-w-0 flex-1 items-center gap-3">
+                {/* Cart icon button */}
+                <button
+                  type="button"
+                  onClick={() => handleAdd(maxQty)}
+                  disabled={soldOut}
+                  aria-label={soldOut ? "Out of stock" : "Add to cart"}
+                  title={soldOut ? "Out of stock" : "Add to cart"}
+                  className={`grid h-14 w-14 shrink-0 place-items-center rounded-full bg-primary text-background shadow-[0_10px_24px_rgba(113,62,38,0.25)] transition hover:bg-secondary active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 ${focusRing}`}
+                >
+                  <ShoppingCart size={21} aria-hidden="true" />
+                </button>
 
+                {/* Order Now button */}
+                <button
+                  type="button"
+                  onClick={() => handleOrderNow(maxQty)}
+                  disabled={soldOut}
+                  className={`inline-flex h-14 min-w-0 flex-1 items-center justify-center rounded-full bg-primary px-5 text-base font-medium text-background transition hover:bg-secondary active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 ${focusRing}`}
+                >
+                  {soldOut ? "Out of stock" : "Order Now"}
+                </button>
+              </div>
+
+              {/* Wishlist button */}
               <button
                 type="button"
                 onClick={handleLike}
@@ -809,7 +830,7 @@ export default function ProductDetailsPage() {
         <div className="mx-auto max-w-[1680px]">{content}</div>
       </div>
 
-      <Footer />
+      <SmallFooter />
     </main>
   );
 }

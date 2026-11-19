@@ -158,7 +158,7 @@ export default function AddressesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const [drawer, setDrawer] = useState(null); // null | "new" | an address
+  const [drawer, setDrawer] = useState(null); 
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
   const [busy, setBusy] = useState({});

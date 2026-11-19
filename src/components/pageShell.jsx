@@ -1,5 +1,5 @@
 import Navbar from "./navbar";
-import Footer from "./footer";
+import SmallFooter from "./smallFooter";
 
 export default function PageShell({ children, width = "max-w-[1680px]" }) {
   return (
@@ -14,7 +14,7 @@ export default function PageShell({ children, width = "max-w-[1680px]" }) {
         <div className={`mx-auto ${width}`}>{children}</div>
       </main>
 
-      <Footer />
+      <SmallFooter />
     </div>
   );
 }
