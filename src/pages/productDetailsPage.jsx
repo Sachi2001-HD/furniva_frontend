@@ -11,6 +11,7 @@ import {
   Minus,
   Plus,
   Ruler,
+  Scale, 
   Share2,
   ShoppingCart,
   Star,
@@ -22,6 +23,7 @@ import { useAuth } from "../context/authContext";
 import { apiRequest } from "../utils/api";
 import { addToCart } from "../utils/cart";
 import ProductGallery from "../components/ProductGallery";
+import ProductCompare from "../components/productCompare"; 
 
 const MAX_PER_ORDER = 20;
 const LOW_STOCK = 5;
@@ -176,6 +178,7 @@ export default function ProductDetailsPage() {
   const [qty, setQty] = useState(1);
   const [liked, setLiked] = useState(false);
   const [toast, setToast] = useState("");
+  const [canCompare, setCanCompare] = useState(false); // NEW
 
   useEffect(() => {
     if (!toast) return;
@@ -185,7 +188,6 @@ export default function ProductDetailsPage() {
     return () => clearTimeout(timer);
   }, [toast]);
 
-  // Load the product
   useEffect(() => {
     let active = true;
 
@@ -193,6 +195,7 @@ export default function ProductDetailsPage() {
     setStatus("loading");
     setProduct(null);
     setRelated([]);
+    setCanCompare(false); // NEW
 
     apiRequest(`/products/${id}`)
       .then((data) => {
@@ -299,7 +302,6 @@ export default function ProductDetailsPage() {
     setToast(`${qty} × ${product.name} added to your cart`);
   };
 
-  // Add product to cart and navigate to checkout
   const handleOrderNow = (maxQty) => {
     if (!requireLogin()) return;
 
@@ -315,6 +317,17 @@ export default function ProductDetailsPage() {
     );
 
     setLiked((previous) => !previous);
+  };
+
+  const scrollToCompare = () => {
+    const reduceMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    ).matches;
+
+    document.getElementById("compare")?.scrollIntoView({
+      behavior: reduceMotion ? "auto" : "smooth",
+      block: "start",
+    });
   };
 
   let content;
@@ -638,9 +651,25 @@ export default function ProductDetailsPage() {
               </button>
             </div>
 
-            <p className="mt-4 text-sm text-secondary/65">
-              Delivery charges are confirmed at checkout.
-            </p>
+            {/* NEW: delivery note and a link to the comparison section */}
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-x-6 gap-y-2 text-sm">
+              <p className="text-secondary/65">
+                Delivery charges are confirmed at checkout.
+              </p>
+
+              {canCompare && (
+                <button
+                  type="button"
+                  onClick={scrollToCompare}
+                  className={`inline-flex items-center gap-2 rounded font-medium text-primary hover:underline ${focusRing}`}
+                >
+                  <Scale size={16} aria-hidden="true" />
+                  {category
+                    ? `Compare with other ${category}`
+                    : "Compare with similar pieces"}
+                </button>
+              )}
+            </div>
 
             {/* Accordions */}
             <div className="mt-10 border-t border-accent/60">
@@ -687,6 +716,13 @@ export default function ProductDetailsPage() {
             </div>
           </div>
         </div>
+
+        {/* NEW: Compare with other pieces from the same category */}
+        <ProductCompare
+          key={product._id}
+          product={product}
+          onAvailability={setCanCompare}
+        />
 
         {/* Consultation prompt */}
         <section
