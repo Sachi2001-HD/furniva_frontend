@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Heart, Plus, Star, ArrowUpRight } from "lucide-react";
+import { Check, Heart, Plus, Scale, Star, ArrowUpRight } from "lucide-react";
 import { useCart } from "../context/cartContext";
 import { useWishlist } from "../context/wishlistContext";
 
@@ -15,7 +15,7 @@ function Stars({ rating }) {
     <span
       className="relative inline-flex"
       role="img"
-      aria-label={`Rated ${rating} out of 5`}
+      aria-label={rating > 0 ? `Rated ${rating} out of 5` : "Not rated yet"}
     >
       <span className="flex gap-0.5 text-accent">
         {stars.map((_, i) => (
@@ -38,26 +38,26 @@ export default function ProductCard({
   product,
   onAddToCart,
   onToggleWishlist,
+  comparing = false,
+  onToggleCompare,
 }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { addItem } = useCart();
   const { isSaved, toggle } = useWishlist();
 
-  const {
-    name,
-    description,
-    price,
-    offerPrice,
-    rating = 0,
-    reviewCount = 0,
-  } = product;
+  const { name, description, price, offerPrice } = product;
 
   const image = product.images?.[0] ?? product.image;
   const to = product.href ?? `/shop/${product._id ?? product.id}`;
 
   const cartItem = product.source ?? product;
   const soldOut = !(cartItem.stock > 0);
+
+  const rating = Math.min(
+    5,
+    Math.max(0, Number(cartItem.rating ?? product.rating ?? 0) || 0)
+  );
 
   const liked = isSaved(product._id ?? product.id);
   const [heartBusy, setHeartBusy] = useState(false);
@@ -112,6 +112,27 @@ export default function ProductCard({
           </span>
         )}
 
+        {onToggleCompare && (
+          <button
+            type="button"
+            onClick={() => onToggleCompare(product)}
+            aria-pressed={comparing}
+            aria-label={
+              comparing
+                ? `Remove ${name} from comparison`
+                : `Add ${name} to comparison`
+            }
+            className={`absolute bottom-3 right-3 inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-xs font-medium shadow-sm backdrop-blur-md transition ${focusRing} ${
+              comparing
+                ? "bg-primary text-background"
+                : "bg-background/85 text-secondary hover:bg-background"
+            }`}
+          >
+            {comparing ? <Check size={14} /> : <Scale size={14} />}
+            {comparing ? "Added" : "Compare"}
+          </button>
+        )}
+
         <button
           type="button"
           onClick={handleWishlist}
@@ -158,9 +179,6 @@ export default function ProductCard({
         <div className="mt-2.5 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <Stars rating={rating} />
-            <span className="text-sm text-secondary/60">
-              {rating.toFixed(1)} ({reviewCount})
-            </span>
           </div>
 
           <Link
