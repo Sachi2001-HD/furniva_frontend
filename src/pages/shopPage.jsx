@@ -6,6 +6,8 @@ import {
   LayoutGrid,
   List,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   X,
   Sofa,
   Armchair,
@@ -23,6 +25,7 @@ import SmallFooter from "../components/smallFooter";
 import ProductCard from "../components/productCard";
 import ShopHero from "../components/shop/shopHero";
 import FilterPanel from "../components/shop/filterPanel";
+import SidebarExtras from "../components/shop/sidebarExtras";
 import CompareTray from "../components/shop/compareTray";
 
 import { useAuth } from "../context/authContext";
@@ -34,6 +37,8 @@ const MAX_PRICE = 10000000;
 
 const PAGE_LIMIT = 50;
 const MAX_PAGES = 20;
+
+const ROWS_PER_PAGE = 3;
 
 const formatPrice = (n) =>
   `Rs. ${Number(n || 0).toLocaleString("en-US")}`;
@@ -149,6 +154,45 @@ async function fetchAllProducts() {
   return list;
 }
 
+const readColumns = () =>
+  window.matchMedia("(min-width: 1280px)").matches
+    ? 3
+    : window.matchMedia("(min-width: 640px)").matches
+    ? 2
+    : 1;
+
+function useGridColumns() {
+  const [columns, setColumns] = useState(readColumns);
+
+  useEffect(() => {
+    const queries = [
+      window.matchMedia("(min-width: 640px)"),
+      window.matchMedia("(min-width: 1280px)"),
+    ];
+    const update = () => setColumns(readColumns());
+
+    queries.forEach((query) => query.addEventListener("change", update));
+
+    return () => {
+      queries.forEach((query) => query.removeEventListener("change", update));
+    };
+  }, []);
+
+  return columns;
+}
+
+const pageNumbers = (current, total) => {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+
+  const wanted = [...new Set([1, current - 1, current, current + 1, total])]
+    .filter((n) => n >= 1 && n <= total)
+    .sort((a, b) => a - b);
+
+  return wanted.flatMap((n, i) =>
+    i > 0 && n - wanted[i - 1] > 1 ? [`gap-${n}`, n] : [n]
+  );
+};
+
 export default function ShopPage() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -170,6 +214,8 @@ export default function ShopPage() {
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState("featured");
   const [view, setView] = useState("grid");
+  const [page, setPage] = useState(1);
+  const columns = useGridColumns();
 
   // Product states
   const [products, setProducts] = useState([]);
@@ -321,22 +367,29 @@ export default function ShopPage() {
     });
   };
 
-  // Product comparison
   const toggleCompare = (product) => {
     const exists = compare.some(
       (item) => item.id === product.id
     );
 
-    if (!exists && compare.length >= 3) {
+    if (exists) {
+      setCompare(compare.filter((item) => item.id !== product.id));
+      return;
+    }
+
+    if (compare.length >= 3) {
       showToast("You can compare up to 3 pieces");
       return;
     }
 
-    setCompare(
-      exists
-        ? compare.filter((item) => item.id !== product.id)
-        : [...compare, product]
-    );
+    if (compare.length > 0 && compare[0].category !== product.category) {
+      showToast(
+        `You're comparing ${compare[0].categoryName || "one category"}. Clear your picks to compare another.`
+      );
+      return;
+    }
+
+    setCompare([...compare, product]);
   };
 
   // Keyboard shortcut for search
@@ -359,6 +412,10 @@ export default function ShopPage() {
       window.removeEventListener("keydown", onKey);
     };
   }, []);
+
+  useEffect(() => {
+    setPage(1);
+  }, [category, filters, query, sort, view, columns]);
 
   // Search, filter and sort products
   const filtered = useMemo(() => {
@@ -439,6 +496,18 @@ export default function ShopPage() {
       ? [...list].sort(sorters[sort])
       : list;
   }, [products, category, filters, query, sort, isSaved]);
+
+  const pageSize = (view === "grid" ? columns : 1) * ROWS_PER_PAGE;
+  const pages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const currentPage = Math.min(page, pages);
+  const pageStart = (currentPage - 1) * pageSize;
+  const pageItems = filtered.slice(pageStart, pageStart + pageSize);
+  const pageEnd = pageStart + pageItems.length;
+
+  const goToPage = (next) => {
+    setPage(Math.min(Math.max(next, 1), pages));
+    scrollToCollection();
+  };
 
   // Active filter chips
   const chips = [
@@ -674,6 +743,8 @@ export default function ShopPage() {
                 onReset={resetAll}
               />
             </div>
+
+            <SidebarExtras products={products} />
           </aside>
 
           {/* Products */}
@@ -764,28 +835,110 @@ export default function ShopPage() {
               </div>
 
             ) : (
-              /* Product cards */
-              <div
-                className={
-                  view === "grid"
-                    ? "grid gap-6 sm:grid-cols-2 xl:grid-cols-3"
-                    : "flex flex-col gap-5"
-                }
-              >
-                {filtered.map((product) => (
-                  <ProductCard
-                    key={product.id}
-                    product={product}
-                    view={view}
-                    showMeta
-                    comparing={compare.some(
-                      (item) => item.id === product.id
-                    )}
-                    onToggleCompare={toggleCompare}
-                    onAddToCart={handleAddToCart}
-                  />
-                ))}
-              </div>
+              <>
+                {/* Product cards */}
+                <div
+                  className={
+                    view === "grid"
+                      ? "grid gap-6 sm:grid-cols-2 xl:grid-cols-3"
+                      : "flex flex-col gap-5"
+                  }
+                >
+                  {pageItems.map((product) => (
+                    <ProductCard
+                      key={product.id}
+                      product={product}
+                      view={view}
+                      showMeta
+                      comparing={compare.some(
+                        (item) => item.id === product.id
+                      )}
+                      onToggleCompare={toggleCompare}
+                      onAddToCart={handleAddToCart}
+                    />
+                  ))}
+                </div>
+
+                {/* Pagination */}
+                {pages > 1 && (
+                  <nav
+                    aria-label="Pagination"
+                    className="mt-12 flex flex-col items-center gap-4 rounded-4xl border border-accent/40 bg-background/90 p-3 shadow-[0_8px_30px_rgba(113,62,38,0.08)] backdrop-blur sm:flex-row sm:justify-between sm:pl-6"
+                  >
+                    <p className="text-[15px] text-secondary/70">
+                      Showing{" "}
+                      <span className="font-semibold text-secondary">
+                        {pageStart + 1}–{pageEnd}
+                      </span>{" "}
+                      of{" "}
+                      <span className="font-semibold text-secondary">
+                        {filtered.length}
+                      </span>{" "}
+                      pieces
+                    </p>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => goToPage(currentPage - 1)}
+                        disabled={currentPage === 1}
+                        aria-label="Previous page"
+                        className="flex h-11 items-center gap-1.5 rounded-full border border-accent/60 px-4 text-[15px] font-medium text-secondary transition hover:bg-accent/30 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
+                      >
+                        <ChevronLeft size={18} />
+                        <span className="hidden sm:inline">Previous</span>
+                      </button>
+
+                      <ul className="hidden items-center gap-1 md:flex">
+                        {pageNumbers(currentPage, pages).map((item) =>
+                          typeof item === "string" ? (
+                            <li
+                              key={item}
+                              aria-hidden="true"
+                              className="px-1 text-secondary/45"
+                            >
+                              …
+                            </li>
+                          ) : (
+                            <li key={item}>
+                              <button
+                                type="button"
+                                onClick={() => goToPage(item)}
+                                aria-label={`Page ${item}`}
+                                aria-current={
+                                  item === currentPage ? "page" : undefined
+                                }
+                                className={`grid h-11 w-11 place-items-center rounded-full text-[15px] font-medium transition ${
+                                  item === currentPage
+                                    ? "bg-primary text-background shadow-sm"
+                                    : "text-secondary/75 hover:bg-accent/30"
+                                }`}
+                              >
+                                {item}
+                              </button>
+                            </li>
+                          )
+                        )}
+                      </ul>
+
+                      <span className="px-2 text-sm text-secondary/70 md:hidden">
+                        Page {currentPage} of {pages}
+                      </span>
+
+                      <button
+                        type="button"
+                        onClick={() => goToPage(currentPage + 1)}
+                        disabled={currentPage === pages}
+                        aria-label="Next page"
+                        className="flex h-11 items-center gap-1.5 rounded-full bg-primary px-5 text-[15px] font-medium text-background transition hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-primary"
+                      >
+                        Next
+                        <ChevronRight size={18} />
+                      </button>
+                    </div>
+                  </nav>
+                )}
+              </>
             )}
 
           </section>
@@ -838,6 +991,8 @@ export default function ShopPage() {
       {/* Compare tray */}
       <CompareTray
         items={compare}
+        catalog={products}
+        onAdd={toggleCompare}
         onRemove={toggleCompare}
         onClear={() => setCompare([])}
       />
